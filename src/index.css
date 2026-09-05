@@ -1,1 +1,285 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ================================================================== */
+/* LexVault design tokens — light (default) & dark                    */
+/* ================================================================== */
+:root {
+  --paper: #f3efe5;
+  --paper2: #eae4d4;
+  --card: #faf7ee;
+  --ink: #232a33;
+  --ink2: #49525e;
+  --ink3: #838c98;
+  --line: #d7d0be;
+  --line2: #c2b9a2;
+  --navy: #14263e;
+  --navy2: #1d3a5f;
+  --navyline: #2c4a70;
+  --crimson: #b3271e;
+  --crimson2: #8f1f18;
+  --steel: #52708c;
+  --amber: #a2660f;
+  --amber2: #cf9638;
+  --rust: #9a4a2e;
+  --green: #2c6b45;
+  --green2: #47915f;
+  --azure: #2456a6;
+  --plum: #6d3a8f;
+  --wm: rgba(35, 42, 51, 0.045);
+  --shadowc: rgba(20, 38, 62, 0.35);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --paper: #10161f;
+  --paper2: #161e29;
+  --card: #141c27;
+  --ink: #e9e3d4;
+  --ink2: #b3ac9c;
+  --ink3: #7c7869;
+  --line: #27313f;
+  --line2: #37424f;
+  --navy: #0b1220;
+  --navy2: #16233a;
+  --navyline: #263a56;
+  --crimson: #cf3a2c;
+  --crimson2: #e05540;
+  --steel: #8fa8bd;
+  --amber: #d09c4c;
+  --amber2: #e0b673;
+  --rust: #c4714f;
+  --green: #55a877;
+  --green2: #74c092;
+  --azure: #6f9fe0;
+  --plum: #b084d4;
+  --wm: rgba(233, 227, 212, 0.035);
+  --shadowc: rgba(0, 0, 0, 0.55);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper2: var(--paper2);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink2: var(--ink2);
+  --color-ink3: var(--ink3);
+  --color-line: var(--line);
+  --color-line2: var(--line2);
+  --color-navy: var(--navy);
+  --color-navy2: var(--navy2);
+  --color-navyline: var(--navyline);
+  --color-crimson: var(--crimson);
+  --color-crimson2: var(--crimson2);
+  --color-steel: var(--steel);
+  --color-amber: var(--amber);
+  --color-amber2: var(--amber2);
+  --color-rust: var(--rust);
+  --color-green: var(--green);
+  --color-green2: var(--green2);
+  --color-azure: var(--azure);
+  --color-plum: var(--plum);
+  --font-display: "Oswald", "IBM Plex Sans", sans-serif;
+  --font-sans: "IBM Plex Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+/* ================================================================== */
+/* Base                                                                */
+/* ================================================================== */
+html {
+  font-family: var(--font-sans);
+}
+body {
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.35s ease, color 0.35s ease;
+}
+::selection {
+  background: var(--crimson);
+  color: var(--paper);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line2) transparent;
+}
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--line2);
+}
+
+/* strong, senior-friendly focus visibility */
+:focus-visible {
+  outline: 2.5px solid var(--crimson);
+  outline-offset: 2px;
+}
+[data-theme="dark"] :focus-visible {
+  outline-color: var(--amber2);
+}
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* ================================================================== */
+/* Ambient surfaces                                                    */
+/* ================================================================== */
+.ambient-paper {
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(1100px 500px at 85% -10%, color-mix(in srgb, var(--navy) 6%, transparent), transparent 70%),
+    radial-gradient(900px 600px at -10% 110%, color-mix(in srgb, var(--crimson) 4%, transparent), transparent 70%),
+    repeating-linear-gradient(0deg, transparent 0 31px, color-mix(in srgb, var(--ink) 3%, transparent) 31px 32px);
+}
+.ambient-navy {
+  background-color: var(--navy);
+  background-image:
+    radial-gradient(700px 420px at 120% -10%, color-mix(in srgb, var(--crimson) 22%, transparent), transparent 70%),
+    radial-gradient(520px 420px at -20% 110%, color-mix(in srgb, var(--navy2) 85%, transparent), transparent 75%),
+    repeating-linear-gradient(0deg, transparent 0 30px, rgba(255, 255, 255, 0.028) 30px 31px);
+}
+.ambient-login {
+  background-color: #0c1524;
+  background-image:
+    radial-gradient(1000px 560px at 80% -10%, rgba(179, 39, 30, 0.2), transparent 70%),
+    radial-gradient(800px 560px at 8% 110%, rgba(29, 58, 95, 0.65), transparent 75%),
+    repeating-linear-gradient(0deg, transparent 0 34px, rgba(255, 255, 255, 0.03) 34px 35px),
+    repeating-linear-gradient(90deg, transparent 0 34px, rgba(255, 255, 255, 0.018) 34px 35px);
+}
+
+.watermark {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.watermark::before {
+  content: var(--wm-text, "CERTIFIED COPY · LEXVAULT");
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(90px, 14vw, 190px);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  color: var(--wm);
+  transform: rotate(-24deg);
+}
+
+.scanline::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(229, 160, 154, 0.05) 48%, rgba(229, 160, 154, 0.1) 50%, transparent 52%);
+  background-size: 100% 240px;
+  animation: scan 7s linear infinite;
+}
+
+.redact {
+  background: var(--ink);
+  color: transparent;
+  border-radius: 1px;
+  user-select: none;
+}
+
+/* ================================================================== */
+/* Motion                                                              */
+/* ================================================================== */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadein {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modalin {
+  from { opacity: 0; transform: translateY(18px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toastin {
+  from { opacity: 0; transform: translateX(28px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes drawerin {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@keyframes stampin {
+  0% { opacity: 0; transform: scale(2.1) rotate(-14deg); }
+  62% { opacity: 1; transform: scale(0.94) rotate(-8deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-8deg); }
+}
+@keyframes flashok {
+  0%, 100% { background-color: color-mix(in srgb, var(--green) 18%, transparent); }
+  30% { background-color: color-mix(in srgb, var(--green) 42%, transparent); }
+}
+@keyframes flashbad {
+  0%, 100% { background-color: color-mix(in srgb, var(--crimson) 20%, transparent); }
+  30% { background-color: color-mix(in srgb, var(--crimson) 45%, transparent); }
+}
+@keyframes shakex {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-7px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
+}
+@keyframes tickermove {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes pulsedot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 color-mix(in srgb, var(--green2) 55%, transparent); }
+  55% { opacity: 0.75; box-shadow: 0 0 0 5px transparent; }
+}
+@keyframes pulsered {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+@keyframes blinkc {
+  0%, 55% { opacity: 1; }
+  56%, 100% { opacity: 0; }
+}
+@keyframes scan {
+  from { background-position: 0 -240px; }
+  to { background-position: 0 100vh; }
+}
+
+.rise { animation: rise 0.55s cubic-bezier(0.22, 0.8, 0.3, 1) both; }
+.fade-in { animation: fadein 0.3s ease both; }
+.modal-in { animation: modalin 0.32s cubic-bezier(0.22, 0.8, 0.3, 1) both; }
+.toast-in { animation: toastin 0.35s cubic-bezier(0.22, 0.8, 0.3, 1) both; }
+.drawer-in { animation: drawerin 0.4s cubic-bezier(0.25, 0.9, 0.3, 1) both; }
+.stamp-in { animation: stampin 0.5s cubic-bezier(0.2, 0.9, 0.25, 1.2) both; }
+.flash-ok { animation: flashok 1.1s ease both; }
+.flash-bad { animation: flashbad 0.9s ease both; }
+.shake-x { animation: shakex 0.4s ease both; }
+.ticker-move { animation: tickermove 46s linear infinite; }
+.pulse-dot { animation: pulsedot 2.2s ease infinite; }
+.pulse-red { animation: pulsered 1.4s ease infinite; }
+.blink { animation: blinkc 1s step-end infinite; }
+
+/* version diff */
+.diff-add { background: color-mix(in srgb, var(--green) 22%, transparent); color: inherit; box-shadow: inset 0 -1px 0 var(--green); }
+.diff-del { background: color-mix(in srgb, var(--crimson) 20%, transparent); text-decoration: line-through; opacity: 0.75; }
+
+/* ================================================================== */
+/* Reduced motion                                                      */
+/* ================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001s !important;
+  }
+  .ticker-move { animation: none !important; }
+  .scanline::after { display: none; }
+}

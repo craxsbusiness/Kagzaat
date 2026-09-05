@@ -1,9 +1,9 @@
 import { useState } from "react";
 import type { CaseFile, Court, RoleId, User } from "../data";
-import { PERMISSION_MATRIX, ROLE_LABEL, keyFingerprint } from "../data";
+import { PERMISSION_MATRIX, ROLE_LABEL, SEC_QUESTIONS, keyFingerprint } from "../data";
 import { hashPassword, uid } from "../lib";
 import { Btn, Chip, Modal, ModalHead, Panel, useToast } from "../ui";
-import { useT } from "../i18n";
+import { usePrefs, useT } from "../i18n";
 import { IcAlert, IcCheck, IcCheckSeal, IcCourt, IcPlus, IcRefresh, IcSend, IcUsers, IcX } from "../icons";
 
 interface Props {
@@ -14,7 +14,7 @@ interface Props {
   onToggleUser: (id: string) => void;
   onRegisterCase: (p: { title: string; type: CaseFile["type"]; courtId: string; judgeId: string; firNumber: string; accusedId: string; victimId: string; stationId: string; ioId: string }) => void;
   onDecideTransfer: (caseId: string, trfId: string, approve: boolean) => void;
-  onCreateUser: (p: { name: string; role: RoleId; email: string; unit: string; courtIds: string[]; stationId: string; password: string }) => void;
+  onCreateUser: (p: { name: string; role: RoleId; email: string; unit: string; courtIds: string[]; stationId: string; password: string; secQuestion: string; secAnswer: string }) => void;
   onAddCourt: (p: { name: string; level: string; location: string }) => void;
   onResetWorkspace: () => void;
 }
@@ -378,6 +378,7 @@ function CourtModal({ p, onClose }: { p: Props; onClose: () => void }) {
 
 function UserModal({ p, onClose }: { p: Props; onClose: () => void }) {
   const t = useT();
+  const { lang } = usePrefs();
   const [name, setName] = useState("");
   const [role, setRole] = useState<RoleId>("JUDGE");
   const [email, setEmail] = useState("");
@@ -385,8 +386,15 @@ function UserModal({ p, onClose }: { p: Props; onClose: () => void }) {
   const [courtIds, setCourtIds] = useState<string[]>([]);
   const [stationId, setStationId] = useState("");
   const [password, setPassword] = useState("");
+  const [qIdx, setQIdx] = useState(0);
+  const [qCustom, setQCustom] = useState(false);
+  const [qText, setQText] = useState("");
+  const [ans, setAns] = useState("");
   const needsCourts = role === "JUDGE" || role === "ADMIN" || role === "AUDITOR";
-  const valid = name.trim().length >= 3 && email.includes("@") && password.length >= 8 && (!needsCourts || courtIds.length > 0) && (role !== "POLICE" || stationId.trim().length > 1);
+  const valid =
+    name.trim().length >= 3 && email.includes("@") && password.length >= 8 &&
+    (!needsCourts || courtIds.length > 0) && (role !== "POLICE" || stationId.trim().length > 1) &&
+    ans.trim().length >= 2 && (!qCustom || qText.trim().length >= 6);
 
   return (
     <Modal onClose={onClose} wide>
@@ -396,7 +404,12 @@ function UserModal({ p, onClose }: { p: Props; onClose: () => void }) {
         onSubmit={(e) => {
           e.preventDefault();
           if (!valid) return;
-          p.onCreateUser({ name: name.trim(), role, email: email.trim(), unit: unit.trim() || ROLE_LABEL[role], courtIds, stationId: stationId.trim(), password });
+          p.onCreateUser({
+            name: name.trim(), role, email: email.trim(), unit: unit.trim() || ROLE_LABEL[role],
+            courtIds, stationId: stationId.trim(), password,
+            secQuestion: qCustom ? qText.trim() : SEC_QUESTIONS[qIdx][lang],
+            secAnswer: ans,
+          });
           onClose();
         }}
       >
@@ -452,7 +465,22 @@ function UserModal({ p, onClose }: { p: Props; onClose: () => void }) {
           <label className={labelCls}>Initial password · min 8 chars (shared once, in person)</label>
           <input className={inputCls} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
         </div>
-        <p className="font-mono text-[10px] uppercase tracking-widest text-ink3">Key fingerprint on first sign-in: {keyFingerprint()} · USER_CREATED will be ledgered · MFA enforced</p>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>Security question · factor 3</label>
+            <select className={inputCls} value={qCustom ? "custom" : String(qIdx)} onChange={(e) => { if (e.target.value === "custom") setQCustom(true); else { setQCustom(false); setQIdx(Number(e.target.value)); } }}>
+              {SEC_QUESTIONS.map((qq, i) => <option key={i} value={i}>{qq[lang]}</option>)}
+              <option value="custom">{t("signup.secCustom")}</option>
+            </select>
+            {qCustom && <input className={`${inputCls} mt-2`} value={qText} onChange={(e) => setQText(e.target.value)} placeholder={t("signup.secCustomPh")} />}
+          </div>
+          <div>
+            <label className={labelCls}>Secret answer (collected privately)</label>
+            <input className={inputCls} type="password" value={ans} onChange={(e) => setAns(e.target.value)} placeholder="••••••" />
+            <p className="font-mono text-[9px] uppercase tracking-widest text-ink3 mt-1">{t("signup.ansHint")}</p>
+          </div>
+        </div>
+        <p className="font-mono text-[10px] uppercase tracking-widest text-ink3">Key fingerprint on first sign-in: {keyFingerprint()} · USER_CREATED will be ledgered · 3-factor sign-in enforced</p>
         <div className="flex justify-end gap-2">
           <Btn kind="ghost" onClick={onClose}>{t("act.cancel")}</Btn>
           <Btn type="submit" disabled={!valid}><IcUsers c="w-3.5 h-3.5" /> {t("admin.addUser")}</Btn>

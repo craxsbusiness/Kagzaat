@@ -42,6 +42,11 @@ export function hashPassword(pw: string): string {
   return "argon2id$" + pseudoSha256("lexvault::" + pw + "::salt-v1");
 }
 
+/* secret answers are normalised (trim + lowercase) and salted separately */
+export function hashSecret(s: string): string {
+  return "argon2id$" + pseudoSha256("lexvault::secq::" + s.trim().toLowerCase() + "::salt-v2");
+}
+
 /* ------------------------------------------------------------------ */
 /* Audit chain                                                         */
 /* ------------------------------------------------------------------ */

@@ -3,53 +3,53 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /* ================================================================== */
-/* Tokens — courtroom: parchment, espresso ink, bottle green, brass    */
+/* Tokens — the LexVault dossier: bone paper, ink navy, sealing crimson */
 /* ================================================================== */
 :root {
-  --paper: #f3ecdb;
-  --paper2: #eadfC6;
-  --card: #f9f3e5;
-  --ink: #2b2118;
-  --ink2: #5d5040;
-  --ink3: #8b7c64;
-  --line: rgba(92, 72, 44, 0.22);
-  --navy: #24453a;      /* courtroom bottle green */
-  --navy2: #2f5a4c;
-  --navyline: rgba(201, 160, 90, 0.4);
-  --crimson: #a33327;   /* oxblood sealing wax */
-  --crimson2: #b8432f;
-  --steel: #46617c;
-  --amber: #9a6c1d;
+  --paper: #f4f1ea;
+  --paper2: #ece7db;
+  --card: #fbf9f4;
+  --ink: #20242b;
+  --ink2: #4d5560;
+  --ink3: #7d8692;
+  --line: rgba(32, 44, 60, 0.16);
+  --navy: #12233a;
+  --navy2: #1c3350;
+  --navyline: rgba(214, 226, 240, 0.18);
+  --crimson: #b3271e;
+  --crimson2: #c73a2c;
+  --steel: #5a7186;
+  --amber: #b07c2a;
   --amber2: #c99a45;
-  --green: #3e6b4f;
-  --green2: #6fae8b;
-  --plum: #6d4a70;
-  --azure: #2f5d80;
-  --rust: #8a4a24;
+  --green: #3e7a55;
+  --green2: #57a276;
+  --plum: #7b5480;
+  --azure: #2f6a94;
+  --rust: #9a5a32;
   --brass: #b98a3e;
-  --wood1: #3a2414;
-  --wood2: #241407;
-  --wood3: #180d04;
-  --shadowc: rgba(43, 33, 24, 0.4);
-  --font-display: "Fraunces", "Georgia", serif;
-  --font-sans: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --wood1: #1b3350;
+  --wood2: #12233a;
+  --wood3: #0c1929;
+  --shadowc: rgba(18, 35, 58, 0.35);
+  --font-display: "Oswald", "Arial Narrow", sans-serif;
+  --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
 }
 
 [data-theme="dark"] {
-  --paper: #191009;
-  --paper2: #231810;
-  --card: #261b11;
-  --ink: #f3e9d2;
-  --ink2: #d2c3a4;
-  --ink3: #a2916f;
-  --line: rgba(214, 178, 120, 0.2);
-  --navy: #2e5a4b;
-  --navy2: #3a6e5c;
-  --navyline: rgba(201, 160, 90, 0.32);
-  --crimson: #c04a38;
-  --crimson2: #d05a44;
-  --steel: #7fa0bd;
+  --paper: #11161e;
+  --paper2: #161d28;
+  --card: #1a222e;
+  --ink: #e7ecf3;
+  --ink2: #b8c2d0;
+  --ink3: #8494a8;
+  --line: rgba(214, 226, 240, 0.14);
+  --navy: #2c4a6e;
+  --navy2: #38587e;
+  --navyline: rgba(140, 170, 210, 0.28);
+  --crimson: #d0503f;
+  --crimson2: #de6350;
+  --steel: #8fb0cd;
   --amber: #d0a24a;
   --amber2: #e0b968;
   --green: #6fae8b;
@@ -58,22 +58,29 @@
   --azure: #8fb4d4;
   --rust: #c07a4a;
   --brass: #d0a45c;
-  --wood1: #2c1a0d;
-  --wood2: #1c0f06;
-  --wood3: #120903;
+  --wood1: #16283f;
+  --wood2: #0f1e31;
+  --wood3: #0a1422;
   --shadowc: rgba(0, 0, 0, 0.55);
 }
 
-/* dark contrast rescues for accent text used over surfaces */
-[data-theme="dark"] .text-navy { color: #e2cfa2 !important; }
+/* dark contrast rescues for accent text over surfaces */
+[data-theme="dark"] .text-navy { color: #cfe0f2 !important; }
 [data-theme="dark"] .text-steel { color: #93b1cb !important; }
 [data-theme="dark"] .text-amber { color: #d9ab55 !important; }
-[data-theme="dark"] .text-crimson { color: #e07a66 !important; }
+[data-theme="dark"] .text-crimson { color: #e57a68 !important; }
 [data-theme="dark"] .text-green { color: #8fcca8 !important; }
 [data-theme="dark"] .text-azure { color: #9cc0dd !important; }
 [data-theme="dark"] .text-plum { color: #c9a4cf !important; }
 [data-theme="dark"] .text-rust { color: #d29a70 !important; }
-[data-theme="dark"] .border-navy { border-color: rgba(226, 207, 162, 0.45) !important; }
+[data-theme="dark"] .border-navy { border-color: rgba(207, 224, 242, 0.45) !important; }
+
+/* native dropdown options must stay legible in every theme */
+select option,
+select optgroup {
+  background-color: var(--paper);
+  color: var(--ink);
+}
 
 /* ================================================================== */
 /* Base                                                                */
@@ -91,15 +98,14 @@ body {
 .font-display { font-family: var(--font-display); }
 .font-mono { font-family: var(--font-mono); }
 
-::selection { background: color-mix(in srgb, var(--crimson) 30%, transparent); }
+::selection { background: color-mix(in srgb, var(--crimson) 28%, transparent); }
 
 :focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; border-radius: 4px; }
 
-/* scrollbars */
 *::-webkit-scrollbar { width: 9px; height: 9px; }
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink3) 45%, transparent); border-radius: 8px; }
-*::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--brass) 70%, transparent); }
+*::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--navy) 65%, transparent); }
 
 /* ================================================================== */
 /* Ambience                                                            */
@@ -107,25 +113,24 @@ body {
 .ambient-paper {
   background-color: var(--paper);
   background-image:
-    radial-gradient(1100px 420px at 50% -180px, color-mix(in srgb, var(--brass) 10%, transparent), transparent 70%),
-    radial-gradient(900px 500px at 108% 110%, color-mix(in srgb, var(--rust) 6%, transparent), transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+    radial-gradient(1000px 420px at 85% -120px, color-mix(in srgb, var(--navy) 7%, transparent), transparent 62%),
+    radial-gradient(800px 420px at -8% 112%, color-mix(in srgb, var(--crimson) 5%, transparent), transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
 }
 
 .ambient-navy {
   background-color: var(--wood2);
   background-image:
-    linear-gradient(165deg, color-mix(in srgb, var(--wood1) 92%, #5a3a1e) 0%, var(--wood2) 48%, var(--wood3) 100%),
-    repeating-linear-gradient(90deg, rgba(255, 226, 178, 0.028) 0px, rgba(255, 226, 178, 0.028) 2px, transparent 2px, transparent 7px),
-    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.06) 0px, transparent 1px, transparent 46px);
-  background-blend-mode: normal, overlay, normal;
+    linear-gradient(160deg, var(--wood1) 0%, var(--wood2) 52%, var(--wood3) 100%),
+    repeating-linear-gradient(0deg, rgba(214, 226, 240, 0.022) 0px, rgba(214, 226, 240, 0.022) 1px, transparent 1px, transparent 44px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
 }
 
 .ambient-login {
-  background-color: #14100b;
+  background-color: #0c1522;
   background-image:
-    radial-gradient(900px 460px at 22% -10%, rgba(185, 138, 62, 0.14), transparent 60%),
-    radial-gradient(760px 420px at 90% 115%, rgba(36, 69, 58, 0.5), transparent 60%),
+    radial-gradient(900px 460px at 22% -10%, rgba(185, 138, 62, 0.13), transparent 60%),
+    radial-gradient(760px 420px at 92% 115%, rgba(28, 51, 80, 0.55), transparent 62%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
 }
 
@@ -133,9 +138,9 @@ body {
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(201, 160, 90, 0.05) 48%,
-    rgba(201, 160, 90, 0.1) 50%,
-    rgba(201, 160, 90, 0.05) 52%,
+    rgba(143, 176, 205, 0.05) 48%,
+    rgba(143, 176, 205, 0.11) 50%,
+    rgba(143, 176, 205, 0.05) 52%,
     transparent 100%
   );
   background-size: 100% 260px;
@@ -155,12 +160,12 @@ body {
 .watermark::after {
   content: var(--wm-text, "CERTIFIED COPY · LEXVAULT");
   font-family: var(--font-display);
-  font-style: italic;
   font-weight: 600;
+  text-transform: uppercase;
   font-size: clamp(64px, 11vw, 148px);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   color: var(--ink);
-  opacity: 0.045;
+  opacity: 0.04;
   transform: rotate(-24deg);
   white-space: nowrap;
 }

@@ -581,7 +581,7 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-paper/40"><IcUser c="w-4 h-4" /></span>
             <select
-              className={`${field} pl-9 appearance-none`}
+              className={`${field} !bg-navy2/90 pl-9 pr-9 appearance-none cursor-pointer`}
               value={role}
               disabled={empty}
               onChange={(e) => setRole(e.target.value as RoleId)}

@@ -57,7 +57,7 @@ function ScalesScene() {
           />
         ))}
 
-        <svg viewBox="0 0 220 240" className="relative w-full h-auto text-navy dark:text-[#e2cfa2]" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
+        <svg viewBox="0 0 220 240" className="relative w-full h-auto text-navy" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
           {/* pillar + base */}
           <path d="M110 46 V196" />
           <path d="M70 196 H150 M82 206 H138" strokeWidth="4" />
@@ -174,7 +174,7 @@ export default function Landing({ stats, onEnter }: Props) {
           ].map((s, i) => (
             <Reveal key={s.label} delay={i * 80}>
               <div className="flex items-baseline gap-3">
-                <p className="font-display font-bold text-[40px] leading-none text-navy dark:text-[#e2cfa2] tabular-nums">{s.val}</p>
+                <p className="font-display font-bold text-[40px] leading-none text-navy tabular-nums">{s.val}</p>
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink2">{s.label}</p>
                   {i === 2 && (
@@ -206,7 +206,7 @@ export default function Landing({ stats, onEnter }: Props) {
                 <p className="font-display italic font-semibold text-[34px] leading-none text-ink3/70 w-12 shrink-0 group-hover:text-crimson transition-colors">
                   {String(i + 1).padStart(2, "0")}
                 </p>
-                <span className="mt-1 w-11 h-11 rounded-full border border-line bg-card text-navy dark:text-[#e2cfa2] flex items-center justify-center shrink-0 group-hover:border-brass group-hover:text-brass transition-colors">
+                <span className="mt-1 w-11 h-11 rounded-full border border-line bg-card text-navy flex items-center justify-center shrink-0 group-hover:border-brass group-hover:text-brass transition-colors">
                   {s.icon}
                 </span>
                 <div className="min-w-0">

@@ -139,11 +139,11 @@ export default function CasesView(p: CasesProps) {
               <button
                 key={s}
                 onClick={() => setFStatus(s)}
-                className={`font-mono text-[10.5px] uppercase tracking-[0.08em] px-2.5 py-2 border transition-colors ${
+                className={`font-mono text-[10.5px] uppercase tracking-[0.08em] px-3 py-2 rounded-full border transition-colors ${
                   fStatus === s ? "bg-navy text-paper border-navy" : "bg-card text-ink2 border-line hover:border-navy"
                 }`}
               >
-                {s === "ALL" ? `${mine.length}` : s}
+                {s === "ALL" ? `${mine.length}` : t(`st.${s}`)}
               </button>
             ))}
           </div>
@@ -156,7 +156,7 @@ export default function CasesView(p: CasesProps) {
                 <button
                   key={c.id}
                   onClick={() => p.attemptOpen(c.id)}
-                  className="rise text-left bg-card border border-line p-4 hover:border-navy hover:-translate-y-0.5 hover:shadow-[0_10px_28px_-18px_var(--shadowc)] transition-all duration-200 group"
+                  className="rise text-left bg-card border border-line rounded-xl p-4 hover:border-navy hover:-translate-y-0.5 hover:shadow-[0_10px_28px_-18px_var(--shadowc)] transition-all duration-200 group"
                   style={{ animationDelay: `${Math.min(i * 55, 440)}ms` }}
                 >
                   <div className="flex items-start justify-between gap-3">

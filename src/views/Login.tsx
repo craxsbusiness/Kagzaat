@@ -356,14 +356,14 @@ function Gateway(p: Props) {
             </div>
           )}
 
-          <div key={shake} className={`bg-navy/80 border border-navyline backdrop-blur-sm ${shake ? "shake-x" : ""}`}>
+          <div key={shake} className={`bg-navy/80 border border-navyline rounded-xl backdrop-blur-sm shadow-2xl shadow-black/40 ${shake ? "shake-x" : ""}`}>
             {/* LOGIN / SIGNUP — always visible */}
-            <div className="grid grid-cols-2 border-b border-navyline" role="tablist" aria-label="Authentication mode">
+            <div className="grid grid-cols-2 border-b border-navyline rounded-t-[inherit]" role="tablist" aria-label="Authentication mode">
               <button
                 role="tab"
                 aria-selected={mode === "signin"}
                 onClick={() => { setMode("signin"); setErr(null); }}
-                className={`font-display font-semibold uppercase tracking-[0.14em] text-[13.5px] py-4 transition-colors border-b-2 ${
+                className={`font-display font-semibold uppercase tracking-[0.14em] text-[13.5px] py-4 transition-colors border-b-2 rounded-tl-xl ${
                   mode === "signin" ? "text-paper border-crimson bg-navy2/50" : "text-paper/45 border-transparent hover:text-paper/80"
                 }`}
               >
@@ -373,7 +373,7 @@ function Gateway(p: Props) {
                 role="tab"
                 aria-selected={mode === "signup"}
                 onClick={() => { setMode("signup"); setErr(null); }}
-                className={`font-display font-semibold uppercase tracking-[0.14em] text-[13.5px] py-4 transition-colors border-b-2 ${
+                className={`font-display font-semibold uppercase tracking-[0.14em] text-[13.5px] py-4 transition-colors border-b-2 rounded-tr-xl ${
                   mode === "signup" ? "text-paper border-green2 bg-navy2/50" : "text-paper/45 border-transparent hover:text-paper/80"
                 }`}
               >
@@ -454,7 +454,7 @@ function Gateway(p: Props) {
                               <span className={`transition-transform ${pickOpen ? "rotate-180" : ""}`}><IcChevD c="w-3.5 h-3.5" /></span>
                             </button>
                             {pickOpen && (
-                              <ul className="modal-in absolute left-0 right-0 bottom-full mb-1 bg-navy border border-navyline shadow-xl shadow-black/40 z-20 max-h-56 overflow-y-auto">
+                              <ul className="modal-in absolute left-0 right-0 bottom-full mb-1 bg-navy border border-navyline rounded-lg shadow-xl shadow-black/40 z-20 max-h-56 overflow-y-auto">
                                 {filteredPrincipals.map((u) => (
                                   <li key={u.id}>
                                     <button onClick={() => { setUserId(u.id); setPickOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-navy2 transition-colors">

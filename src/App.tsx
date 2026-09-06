@@ -673,7 +673,7 @@ function Portal() {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
                   <div className="modal-in absolute left-0 top-full mt-2.5 w-[400px] max-w-[92vw] max-h-[76vh] overflow-y-auto bg-paper border border-line rounded-xl shadow-2xl shadow-navy/30 z-50">
-                    <div className="sticky top-0 z-10 bg-navy text-paper">
+                    <div className="sticky top-0 z-10 bg-navy text-paper rounded-t-[inherit]">
                       <div className="px-4 py-3 flex items-center gap-2.5">
                         <span className="w-7 h-7 rounded-full bg-crimson flex items-center justify-center shrink-0">
                           <IcShield c="w-3.5 h-3.5" />
@@ -801,7 +801,7 @@ function Portal() {
             </div>
 
             <span className="hidden md:inline font-mono text-[12px] text-ink2 tabular-nums mr-1">{fmtClock(now.toISOString())}</span>
-            <span className="hidden xl:inline font-mono text-[10px] uppercase tracking-widest text-ink3 border border-line px-2 py-1.5">chain · {audit.length}</span>
+            <span className="hidden xl:inline font-mono text-[10px] uppercase tracking-widest text-ink3 border border-line rounded-lg px-2.5 py-1.5">chain · {audit.length}</span>
 
             <div className="ml-auto flex items-center gap-2">
               <AccessCluster compact />

@@ -166,6 +166,15 @@ body {
 .font-display { font-family: var(--font-display); }
 .font-mono { font-family: var(--font-mono); }
 
+/* Soft-corner default for interactive controls — element specificity, so any
+   rounded-* utility (pills, custom radii) still wins where it is applied. */
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea,
+button {
+  border-radius: 9px;
+}
+
 ::selection { background: color-mix(in srgb, var(--crimson) 28%, transparent); }
 
 :focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; border-radius: 4px; }

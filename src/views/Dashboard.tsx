@@ -67,7 +67,7 @@ export default function Dashboard(p: DashProps) {
 
       {/* first-run banner */}
       {p.cases.length === 0 && (
-        <div className="rise relative overflow-hidden border border-navy/25 bg-navy text-paper px-6 py-6">
+        <div className="rise relative overflow-hidden rounded-xl border border-navy/25 bg-navy text-paper px-6 py-6">
           <div className="scanline absolute inset-0 pointer-events-none opacity-60" />
           <div className="relative flex flex-wrap items-center gap-5">
             <span className="w-12 h-12 bg-crimson flex items-center justify-center shrink-0"><IcShield c="w-6 h-6" /></span>

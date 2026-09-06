@@ -221,7 +221,7 @@ export function Modal({ onClose, children, wide = false }: { onClose: () => void
 
 export function ModalHead({ title, sub, onClose }: { title: string; sub?: string; onClose: () => void }) {
   return (
-    <header className="flex items-start justify-between gap-4 px-5 pt-4 pb-3 border-b border-line bg-navy text-paper">
+    <header className="flex items-start justify-between gap-4 px-5 pt-4 pb-3 border-b border-line bg-navy text-paper rounded-t-[inherit]">
       <div>
         <h2 className="font-display font-semibold uppercase tracking-[0.14em] text-[16px] leading-tight">{title}</h2>
         {sub && <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-paper/55 mt-1">{sub}</p>}

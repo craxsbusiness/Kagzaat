@@ -118,7 +118,7 @@ export default function AuditTrail(p: Props) {
           <button
             key={cc}
             onClick={() => setCat(cc)}
-            className={`font-mono text-[10.5px] uppercase tracking-[0.08em] px-2.5 py-2 border transition-colors ${cat === cc ? "bg-navy text-paper border-navy" : "bg-card text-ink2 border-line hover:border-navy"}`}
+            className={`font-mono text-[10.5px] uppercase tracking-[0.08em] px-3 py-2 rounded-full border transition-colors ${cat === cc ? "bg-navy text-paper border-navy" : "bg-card text-ink2 border-line hover:border-navy"}`}
           >
             {cc}
           </button>

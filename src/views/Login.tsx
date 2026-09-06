@@ -29,7 +29,7 @@ const TONE_BG: Record<string, string> = {
   azure: "bg-azure",
 };
 
-const field = "w-full bg-navy2/60 border border-navyline px-3 py-2.5 text-[14px] text-paper placeholder:text-paper/35 focus:outline-none focus:border-[#e5a09a] transition-colors";
+const field = "w-full bg-navy2/60 border border-navyline px-3 py-2.5 text-[14px] text-paper placeholder:text-paper/35 focus:outline-none focus:border-[#e0b968] transition-colors";
 const label = "font-mono text-[9.5px] uppercase tracking-[0.18em] text-paper/55 block mb-1.5";
 
 export default function Login(p: Props) {
@@ -43,7 +43,7 @@ function FingerprintGlyph({ tone }: { tone: "idle" | "scanning" | "done" }) {
   return (
     <svg
       viewBox="0 0 120 120"
-      className={`w-full h-full transition-colors duration-500 ${tone === "done" ? "text-green2" : tone === "scanning" ? "text-[#e5a09a]" : "text-paper/60"}`}
+      className={`w-full h-full transition-colors duration-500 ${tone === "done" ? "text-green2" : tone === "scanning" ? "text-[#e0b968]" : "text-paper/60"}`}
       fill="none"
       stroke="currentColor"
       strokeWidth="3.2"
@@ -106,7 +106,7 @@ function BiometricStep({ userName, onMatch }: { userName: string; onMatch: (scor
         @keyframes bioring{0%{box-shadow:0 0 0 0 rgba(85,145,106,.55)}100%{box-shadow:0 0 0 16px rgba(85,145,106,0)}}
       `}</style>
       <header className="px-7 pt-4 pb-2">
-        <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e5a09a]">{t("login.bioKicker")}</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e0b968]">{t("login.bioKicker")}</p>
         <h2 className="font-display font-semibold uppercase tracking-wide text-[22px] mt-1">{t("login.bioTitle")}</h2>
         <p className="text-[12.5px] text-paper/55 mt-1.5">
           {t("login.bioSub")} <span className="text-paper/80 font-semibold">{userName}</span>
@@ -126,11 +126,11 @@ function BiometricStep({ userName, onMatch }: { userName: string; onMatch: (scor
             }
           }}
           aria-label={t("login.bioHold")}
-          className={`relative w-44 h-44 rounded-full border-2 overflow-hidden select-none transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a09a] ${
+          className={`relative w-44 h-44 rounded-full border-2 overflow-hidden select-none transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e0b968] ${
             phase === "done"
               ? "border-green2 bg-green/10"
               : phase === "scanning"
-              ? "border-[#e5a09a] bg-crimson/10 scale-[1.03]"
+              ? "border-[#e0b968] bg-[#e0b968]/10 scale-[1.03]"
               : "border-navyline bg-navy2/50 hover:border-paper/40 active:scale-[0.98]"
           }`}
           style={phase === "done" ? { animation: "bioring 0.9s ease-out 2" } : undefined}
@@ -140,10 +140,10 @@ function BiometricStep({ userName, onMatch }: { userName: string; onMatch: (scor
           </div>
           {phase === "scanning" && (
             <span
-              className="absolute left-[10%] right-[10%] h-[3px] bg-[#e5a09a] rounded-full"
+              className="absolute left-[10%] right-[10%] h-[3px] bg-[#e0b968] rounded-full"
               style={{
                 animation: `bioscan ${reduced ? 0.3 : 1.8}s linear ${reduced ? "1" : "infinite"}`,
-                boxShadow: "0 0 14px 3px rgba(229,160,154,0.55)",
+                boxShadow: "0 0 14px 3px rgba(224,185,104,0.55)",
               }}
             />
           )}
@@ -159,15 +159,15 @@ function BiometricStep({ userName, onMatch }: { userName: string; onMatch: (scor
         {/* progress rail */}
         <div className="w-44 h-[3px] bg-navyline mt-4 overflow-hidden">
           {phase === "scanning" && (
-            <span className="block h-full bg-[#e5a09a]" style={{ animation: `biofill ${reduced ? 0.3 : 1.8}s linear forwards` }} />
+            <span className="block h-full bg-[#e0b968]" style={{ animation: `biofill ${reduced ? 0.3 : 1.8}s linear forwards` }} />
           )}
           {phase === "done" && <span className="block h-full w-full bg-green2" />}
         </div>
 
-        <p className={`font-mono text-[10.5px] uppercase tracking-[0.18em] mt-3 ${phase === "done" ? "text-green2" : phase === "scanning" ? "text-[#e5a09a]" : "text-paper/50"}`}>
+        <p className={`font-mono text-[10.5px] uppercase tracking-[0.18em] mt-3 ${phase === "done" ? "text-green2" : phase === "scanning" ? "text-[#e0b968]" : "text-paper/50"}`}>
           {phase === "done" ? `${t("login.bioOk")} · ${score}%` : phase === "scanning" ? t("login.bioScanning") : t("login.bioHold")}
         </p>
-        {released && phase === "idle" && <p className="text-[12px] text-[#e5a09a] mt-2 fade-in">{t("login.bioCancel")}</p>}
+        {released && phase === "idle" && <p className="text-[12px] text-[#e0b968] mt-2 fade-in">{t("login.bioCancel")}</p>}
         <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-paper/35 mt-4 text-center">
           Verification is completed on your device
         </p>
@@ -303,7 +303,7 @@ function Gateway(p: Props) {
         </div>
 
         <div className="mt-12 relative z-10">
-          <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[#e5a09a]">{t("login.3fa")}</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[#e0b968]">{t("login.3fa")}</p>
           <h1 className="font-display font-semibold uppercase leading-[1.04] text-[44px] tracking-wide mt-3">
             {t("login.h1a")}
             <br />
@@ -335,7 +335,7 @@ function Gateway(p: Props) {
             ["login.k4", "login.k4v"],
           ].map(([k, v], i) => (
             <div key={k} className="rise border border-navyline bg-navy2/40 px-3.5 py-3" style={{ animationDelay: `${i * 90}ms` }}>
-              <p className="font-display font-semibold uppercase tracking-[0.14em] text-[11px] text-[#e5a09a]">{t(k)}</p>
+              <p className="font-display font-semibold uppercase tracking-[0.14em] text-[11px] text-[#e0b968]">{t(k)}</p>
               <p className="font-mono text-[10px] text-paper/60 mt-1 leading-relaxed">{t(v)}</p>
             </div>
           ))}
@@ -398,7 +398,7 @@ function Gateway(p: Props) {
                 {step === "creds" && (
                   <>
                     <header className="px-7 pt-4 pb-3">
-                      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e5a09a]">{t("login.step")}</p>
+                      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e0b968]">{t("login.step")}</p>
                       <h2 className="font-display font-semibold uppercase tracking-wide text-[22px] mt-1">{t("login.title")}</h2>
                     </header>
                     <form className="px-7 pb-4 space-y-4" onSubmit={(e) => { e.preventDefault(); submitCreds(); }}>
@@ -419,7 +419,7 @@ function Gateway(p: Props) {
                           </button>
                         </div>
                       </div>
-                      {err && <p className="text-[12.5px] text-[#e5a09a] border-l-2 border-crimson pl-3">{err}</p>}
+                      {err && <p className="text-[12.5px] text-[#f0a48f] border-l-2 border-crimson pl-3">{err}</p>}
                       <Btn type="submit" disabled={empty} className="w-full !py-3 !text-[13px]"><IcKey c="w-4 h-4" /> {t("login.continue")}</Btn>
                     </form>
 
@@ -438,7 +438,7 @@ function Gateway(p: Props) {
                               id="roleFilter"
                               value={roleFilter}
                               onChange={(e) => setRoleFilter(e.target.value as "ALL" | RoleId)}
-                              className="flex-1 bg-navy2/60 border border-navyline px-2 py-2 font-mono text-[10.5px] uppercase text-paper/80 focus:outline-none focus:border-[#e5a09a] transition-colors"
+                              className="flex-1 bg-navy2/60 border border-navyline px-2 py-2 font-mono text-[10.5px] uppercase text-paper/80 focus:outline-none focus:border-[#e0b968] transition-colors"
                             >
                               <option value="ALL">{t("login.allRoles")}</option>
                               {ALL_ROLES.map((r) => (
@@ -483,13 +483,13 @@ function Gateway(p: Props) {
                 {step === "mfa" && (
                   <>
                     <header className="px-7 pt-4 pb-3">
-                      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e5a09a]">{t("login.step")}</p>
+                      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e0b968]">{t("login.step")}</p>
                       <h2 className="font-display font-semibold uppercase tracking-wide text-[22px] mt-1">{t("login.mfaTitle")}</h2>
                       <p className="text-[12.5px] text-paper/55 mt-1.5">{t("login.mfaSub")}</p>
                     </header>
                     <form className="px-7 pb-5 space-y-4" onSubmit={(e) => { e.preventDefault(); submitMfa(); }}>
                       <input
-                        className="w-full bg-navy2/60 border border-navyline px-3 py-3 text-center font-mono text-[26px] tracking-[0.5em] text-paper focus:outline-none focus:border-[#e5a09a] transition-colors"
+                        className="w-full bg-navy2/60 border border-navyline px-3 py-3 text-center font-mono text-[26px] tracking-[0.5em] text-paper focus:outline-none focus:border-[#e0b968] transition-colors"
                         value={mfaInput}
                         onChange={(e) => setMfaInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
                         placeholder="······"
@@ -501,7 +501,7 @@ function Gateway(p: Props) {
                         <span className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-paper/50">{t("login.demoCode")}</span>
                         <span className="font-mono text-[15px] font-bold text-green2 tracking-[0.3em]">{mfaCode}</span>
                       </div>
-                      {err && <p className="text-[12.5px] text-[#e5a09a] border-l-2 border-crimson pl-3">{err}</p>}
+                      {err && <p className="text-[12.5px] text-[#f0a48f] border-l-2 border-crimson pl-3">{err}</p>}
                       <div className="flex gap-2">
                         <Btn kind="ghost" onClick={() => { setStep("creds"); setMfaInput(""); setErr(null); }} className="!text-paper/70 !border-navyline hover:!border-paper/40">{t("act.back")}</Btn>
                         <Btn type="submit" disabled={mfaInput.length !== 6} className="flex-1"><IcLock c="w-4 h-4" /> {t("login.verify")}</Btn>

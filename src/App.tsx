@@ -10,8 +10,8 @@ import { hashPassword } from "./lib";
 import { Btn, Chip, ToastProvider, useFeed, useToast } from "./ui";
 import { PrefsProvider, usePrefs, useT } from "./i18n";
 import {
-  IcChain, IcCheck, IcCheckSeal, IcClock, IcCourt, IcFolder, IcKey, IcLang, IcLogout,
-  IcMenu, IcMoon, IcPulse, IcSearch, IcShield, IcSun, IcTextSize, IcX,
+  IcChain, IcCheck, IcCheckSeal, IcClock, IcCourt, IcFolder, IcKey, IcLogout,
+  IcMenu, IcPulse, IcSearch, IcShield, IcX,
 } from "./icons";
 import Login from "./views/Login";
 import Dashboard from "./views/Dashboard";
@@ -652,15 +652,17 @@ function Portal() {
                 aria-expanded={menuOpen}
                 aria-label={t("hdr.notifications")}
                 title={t("hdr.notifications")}
-                className={`relative w-10 h-10 border flex items-center justify-center transition-colors ${
-                  menuOpen ? "border-crimson bg-crimson/10 text-crimson" : "border-line bg-card text-ink2 hover:text-ink hover:border-navy"
+                className={`relative w-11 h-11 rounded-lg flex items-center justify-center transition-all duration-200 ${
+                  menuOpen
+                    ? "bg-crimson border border-crimson text-paper shadow-lg shadow-crimson/30"
+                    : "bg-navy border border-navy text-paper hover:bg-navy2 shadow-md shadow-navy/25 hover:-translate-y-0.5"
                 } ${flash ? "notif-flash" : ""}`}
               >
                 <IcMenu c="w-5 h-5" />
                 {unread + feed.unread > 0 && (
                   <span
                     key={unread + feed.unread}
-                    className="stamp-in absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-crimson text-paper font-mono text-[9.5px] font-bold flex items-center justify-center"
+                    className="stamp-in absolute -top-1.5 -right-1.5 min-w-[19px] h-[19px] px-1 rounded-full bg-amber2 text-navy font-mono text-[10px] font-bold flex items-center justify-center border-2 border-paper"
                   >
                     {unread + feed.unread}
                   </span>
@@ -670,23 +672,36 @@ function Portal() {
               {menuOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                  <div className="modal-in absolute left-0 top-full mt-2 w-[380px] max-w-[92vw] max-h-[74vh] overflow-y-auto bg-paper border border-line shadow-xl shadow-navy/25 z-50">
-                    <div className="sticky top-0 z-10 px-3.5 py-2.5 border-b border-line bg-navy text-paper flex items-center justify-between">
-                      <p className="font-display font-semibold uppercase tracking-[0.14em] text-[12.5px]">{t("hdr.notifications")}</p>
-                      <button
-                        onClick={() => {
-                          feed.markAll();
-                          setNotices((prev) => prev.map((n) => (n.forUserId === user.id ? { ...n, read: true } : n)));
-                        }}
-                        className="font-mono text-[9px] uppercase tracking-widest text-paper/60 hover:text-paper transition-colors"
-                      >
-                        {t("hdr.markRead")}
-                      </button>
+                  <div className="modal-in absolute left-0 top-full mt-2.5 w-[400px] max-w-[92vw] max-h-[76vh] overflow-y-auto bg-paper border border-line rounded-xl shadow-2xl shadow-navy/30 z-50">
+                    <div className="sticky top-0 z-10 bg-navy text-paper">
+                      <div className="px-4 py-3 flex items-center gap-2.5">
+                        <span className="w-7 h-7 rounded-full bg-crimson flex items-center justify-center shrink-0">
+                          <IcShield c="w-3.5 h-3.5" />
+                        </span>
+                        <p className="font-display font-semibold uppercase tracking-[0.14em] text-[13px]">{t("hdr.notifications")}</p>
+                        {unread + feed.unread > 0 && (
+                          <span className="font-mono text-[9.5px] font-bold bg-amber2 text-navy rounded-full px-2 py-0.5 tabular-nums">
+                            {unread + feed.unread} new
+                          </span>
+                        )}
+                        <button
+                          onClick={() => {
+                            feed.markAll();
+                            setNotices((prev) => prev.map((n) => (n.forUserId === user.id ? { ...n, read: true } : n)));
+                          }}
+                          className="ml-auto font-mono text-[9px] uppercase tracking-widest text-paper/60 hover:text-[#e0b968] transition-colors"
+                        >
+                          {t("hdr.markRead")}
+                        </button>
+                      </div>
+                      <div className="h-[2px] bg-gradient-to-r from-[#b98a3e] via-[#b98a3e]/40 to-transparent" />
                     </div>
 
                     {/* quick navigation */}
-                    <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink3 px-3.5 pt-2.5 pb-1.5">{t("hdr.quickNav")}</p>
-                    <nav className="px-2 pb-2 grid grid-cols-2 gap-1">
+                    <p className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.2em] text-ink3 px-4 pt-3 pb-1.5">
+                      <span className="w-3 h-[3px] bg-brass inline-block rounded-full" /> {t("hdr.quickNav")}
+                    </p>
+                    <nav className="px-2.5 pb-2 grid grid-cols-2 gap-1.5">
                       {NAV.map((n) => (
                         <button
                           key={n.key}
@@ -695,20 +710,24 @@ function Portal() {
                             setMenuOpen(false);
                             if (n.key !== "cases") { setSelCase(null); setForbidden(null); }
                           }}
-                          className={`flex items-center gap-2 px-2.5 py-2 text-left transition-colors border ${
-                            nav === n.key ? "border-crimson/60 bg-crimson/[0.06] text-crimson" : "border-transparent text-ink2 hover:border-line hover:bg-paper2"
+                          className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all duration-150 border ${
+                            nav === n.key
+                              ? "border-crimson/60 bg-crimson/[0.07] text-crimson shadow-[inset_3px_0_0_var(--crimson)]"
+                              : "border-line/80 bg-card text-ink2 hover:text-ink hover:border-navy/50 hover:translate-x-0.5"
                           }`}
                         >
                           {n.icon}
-                          <span className="font-display text-[11.5px] uppercase tracking-[0.1em]">{n.label}</span>
+                          <span className="font-display text-[11.5px] uppercase tracking-[0.1em] leading-tight">{n.label}</span>
                         </button>
                       ))}
                     </nav>
 
                     {/* live activity — everything that used to pop bottom-right */}
-                    <div className="px-3.5 pt-1.5 pb-1.5 border-t border-line/70 flex items-center justify-between">
-                      <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink3">{t("hdr.activity")}</p>
-                      {feed.unread > 0 && <span className="font-mono text-[9px] text-crimson font-bold">{feed.unread} new</span>}
+                    <div className="px-4 pt-2.5 pb-1.5 border-t border-line/70 flex items-center justify-between">
+                      <p className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.2em] text-ink3">
+                        <span className="w-3 h-[3px] bg-brass inline-block rounded-full" /> {t("hdr.activity")}
+                      </p>
+                      {feed.unread > 0 && <span className="font-mono text-[9px] text-crimson font-bold tabular-nums">{feed.unread} new</span>}
                     </div>
                     {feed.feed.length === 0 ? (
                       <p className="px-3.5 pb-4 text-[12px] text-ink3 leading-relaxed">{t("hdr.emptyFeed")}</p>
@@ -736,9 +755,11 @@ function Portal() {
                     )}
 
                     {/* registry notices (cases, hearings, transfers…) */}
-                    <div className="px-3.5 pt-2 pb-1.5 border-t border-line/70 flex items-center justify-between">
-                      <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink3">{t("hdr.notices")}</p>
-                      {unread > 0 && <span className="font-mono text-[9px] text-crimson font-bold">{unread} new</span>}
+                    <div className="px-4 pt-2.5 pb-1.5 border-t border-line/70 flex items-center justify-between">
+                      <p className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.2em] text-ink3">
+                        <span className="w-3 h-[3px] bg-brass inline-block rounded-full" /> {t("hdr.notices")}
+                      </p>
+                      {unread > 0 && <span className="font-mono text-[9px] text-crimson font-bold tabular-nums">{unread} new</span>}
                     </div>
                     <ul className="divide-y divide-line/70 border-t border-line/70">
                       {myNotices.slice(0, 12).map((n) => (
@@ -783,61 +804,10 @@ function Portal() {
             <span className="hidden xl:inline font-mono text-[10px] uppercase tracking-widest text-ink3 border border-line px-2 py-1.5">chain · {audit.length}</span>
 
             <div className="ml-auto flex items-center gap-2">
-              {/* accessibility cluster */}
-              <div className="flex items-center gap-1.5 border border-line bg-card px-1.5 py-1" role="group" aria-label={t("a11y.lang")}>
-                <IcLang c="w-3.5 h-3.5 text-ink3 ml-1" />
-                {(["en", "hi"] as const).map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => { prefs.setLang(l); toast("info", t("a11y.toastLang")); }}
-                    className={`font-display text-[12px] uppercase tracking-wide px-2 py-1.5 transition-colors ${prefs.lang === l ? "bg-navy text-paper" : "text-ink2 hover:text-ink hover:bg-paper2"}`}
-                    aria-pressed={prefs.lang === l}
-                  >
-                    {l === "en" ? "EN" : "हिंदी"}
-                  </button>
-                ))}
-              </div>
+              <AccessCluster compact />
 
-              <div className="flex items-center gap-1 border border-line bg-card px-1.5 py-1" role="group" aria-label={t("a11y.size")}>
-                <IcTextSize c="w-3.5 h-3.5 text-ink3 ml-1" />
-                <button
-                  onClick={() => { prefs.zoomOut(); }}
-                  disabled={prefs.zoomIdx === 0}
-                  className="font-display font-bold text-[14px] w-8 py-1.5 text-ink2 hover:text-ink hover:bg-paper2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                  title={t("a11y.smaller")}
-                  aria-label={t("a11y.smaller")}
-                >
-                  A−
-                </button>
-                <span className="font-mono text-[10px] text-ink3 w-9 text-center tabular-nums">{Math.round(prefs.zoom * 100)}%</span>
-                <button
-                  onClick={() => { prefs.zoomIn(); }}
-                  disabled={prefs.zoomIdx >= 3}
-                  className="font-display font-bold text-[14px] w-8 py-1.5 text-ink2 hover:text-ink hover:bg-paper2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                  title={t("a11y.larger")}
-                  aria-label={t("a11y.larger")}
-                >
-                  A+
-                </button>
-              </div>
-
-              <button
-                onClick={() => {
-                  const next = prefs.theme === "light" ? "dark" : "light";
-                  prefs.setTheme(next);
-                  toast("info", t("a11y.toastTheme"), next === "dark" ? t("a11y.dark") : t("a11y.light"));
-                }}
-                className="relative w-10 h-10 border border-line bg-card text-ink2 hover:text-ink hover:border-navy transition-colors flex items-center justify-center overflow-hidden"
-                title={prefs.theme === "light" ? t("a11y.dark") : t("a11y.light")}
-                aria-label={prefs.theme === "light" ? t("a11y.dark") : t("a11y.light")}
-              >
-                <span key={prefs.theme} className="modal-in inline-flex">
-                  {prefs.theme === "light" ? <IcMoon c="w-4.5 h-4.5" /> : <IcSun c="w-4.5 h-4.5" />}
-                </span>
-              </button>
-
-              <div className="flex items-center gap-2.5 border border-line bg-card pl-2.5 pr-3 py-1.5">
-                <span className="w-6 h-6 bg-navy text-paper flex items-center justify-center"><IcKey c="w-3.5 h-3.5" /></span>
+              <div className="flex items-center gap-2.5 border border-line rounded-full bg-card pl-1.5 pr-3.5 py-1.5">
+                <span className="w-7 h-7 rounded-full bg-navy text-paper flex items-center justify-center"><IcKey c="w-3.5 h-3.5" /></span>
                 <span className="hidden sm:block">
                   <span className="block text-[12.5px] font-semibold leading-tight text-ink">{user.name}</span>
                   <span className="block font-mono text-[8.5px] uppercase tracking-widest text-ink3">{ROLE_LABEL[user.role]} · {user.keyFp}</span>

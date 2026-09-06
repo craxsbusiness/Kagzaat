@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
-import type { LoginEvent, User } from "../data";
-import { ROLE_BANNER, ROLE_LABEL, SEC_QUESTIONS, keyFingerprint } from "../data";
-import { deviceInfo, hashPassword, hashSecret, uid } from "../lib";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { LoginEvent, RoleId, User } from "../data";
+import { ROLE_BANNER } from "../data";
+import { deviceInfo, hashPassword, useReducedMotion } from "../lib";
 import { Btn, useToast } from "../ui";
 import { usePrefs, useT } from "../i18n";
 import { IcCheck, IcChevD, IcFinger, IcKey, IcLock, IcShield, IcUser, IcX } from "../icons";
@@ -10,11 +10,12 @@ interface Props {
   users: User[];
   onLogin: (userId: string, device: string, ip: string) => void;
   logLoginEvent: (ev: Omit<LoginEvent, "id" | "ts">) => void;
-  onCreateFirstAdmin: (u: User) => void;
-  onSignup: (p: { name: string; role: "VICTIM" | "ACCUSED"; email: string; password: string; secQuestion: string; secAnswer: string }) => boolean;
+  onSignup: (p: { name: string; role: RoleId; email: string; password: string; courtIds: string[]; stationId: string }) => boolean;
   pushSecurity?: (severity: "INFO" | "WARN" | "CRITICAL", kind: string, detail: string, userId?: string) => void;
   notice?: string | null;
 }
+
+const ALL_ROLES: RoleId[] = ["JUDGE", "LAWYER", "ACCUSED", "VICTIM", "POLICE", "ADMIN", "AUDITOR"];
 
 const TONE_BG: Record<string, string> = {
   crimson: "bg-crimson",
@@ -30,148 +31,21 @@ const field = "w-full bg-navy2/60 border border-navyline px-3 py-2.5 text-[14px]
 const label = "font-mono text-[9.5px] uppercase tracking-[0.18em] text-paper/55 block mb-1.5";
 
 export default function Login(p: Props) {
-  if (p.users.length === 0) {
-    return <FirstRun {...p} />;
-  }
   return <Gateway {...p} />;
 }
 
 /* ================================================================== */
-/* First-run provisioning — registry starts empty                      */
+/* Factor stepper — 1 password · 2 one-time code · 3 fingerprint       */
 /* ================================================================== */
-function FirstRun({ onCreateFirstAdmin }: Props) {
-  const t = useT();
-  const { lang } = usePrefs();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [unit, setUnit] = useState("");
-  const [pw, setPw] = useState("");
-  const [pw2, setPw2] = useState("");
-  const [qIdx, setQIdx] = useState(0);
-  const [qCustom, setQCustom] = useState(false);
-  const [qText, setQText] = useState("");
-  const [ans, setAns] = useState("");
-  const [showPw, setShowPw] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [shake, setShake] = useState(0);
-
-  const okPw = pw.length >= 8;
-  const okQ = !qCustom || qText.trim().length >= 6;
-  const valid = name.trim().length >= 3 && email.includes("@") && okPw && pw === pw2 && okQ && ans.trim().length >= 2;
-
-  const submit = () => {
-    if (!valid) {
-      setErr(!okPw ? "Password must be at least 8 characters." : pw !== pw2 ? "Passwords do not match." : !okQ ? "Write your custom question." : "Complete all fields to provision the registry.");
-      setShake((s) => s + 1);
-      return;
-    }
-    onCreateFirstAdmin({
-      id: uid("USR"),
-      name: name.trim(),
-      role: "ADMIN",
-      unit: unit.trim() || "Court Registry",
-      courtIds: [],
-      email: email.trim(),
-      keyFp: keyFingerprint(),
-      status: "ACTIVE",
-      clearanceNote: "Founding registrar · full administration",
-      passHash: hashPassword(pw),
-      secQuestion: qCustom ? qText.trim() : SEC_QUESTIONS[qIdx][lang],
-      secAnswerHash: hashSecret(ans),
-    });
-  };
-
-  return (
-    <div className="min-h-screen ambient-login text-paper flex items-center justify-center p-6 relative overflow-hidden">
-      <div className="scanline absolute inset-0 pointer-events-none" />
-      <div className="w-full max-w-2xl relative z-10 rise">
-        <div className="flex items-center gap-3 justify-center">
-          <span className="w-11 h-11 bg-crimson flex items-center justify-center"><IcShield c="w-6 h-6" /></span>
-          <div>
-            <p className="font-display font-bold tracking-[0.22em] text-[24px] leading-none">LEXVAULT</p>
-            <p className="font-mono text-[9.5px] uppercase tracking-[0.24em] text-paper/50 mt-1.5">{t("app.tag")}</p>
-          </div>
-        </div>
-
-        <div key={shake} className={`mt-8 bg-navy/80 border border-navyline backdrop-blur-sm ${shake ? "shake-x" : ""}`}>
-          <header className="px-7 pt-6 pb-4 border-b border-navyline">
-            <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e5a09a]">{t("firstrun.kicker")}</p>
-            <h1 className="font-display font-semibold uppercase tracking-wide text-[26px] leading-tight mt-2">{t("firstrun.title")}</h1>
-            <p className="text-[13px] text-paper/60 leading-relaxed mt-2">{t("firstrun.lede")}</p>
-          </header>
-          <form className="px-7 py-6 space-y-4" onSubmit={(e) => { e.preventDefault(); submit(); }}>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className={label}>{t("firstrun.name")}</label>
-                <input className={field} value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-              </div>
-              <div>
-                <label className={label}>{t("firstrun.unit")}</label>
-                <input className={field} value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="Court Registry" />
-              </div>
-            </div>
-            <div>
-              <label className={label}>{t("firstrun.email")}</label>
-              <input className={field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="registry@yourcourt.gov" />
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className={label}>{t("firstrun.pw")}</label>
-                <div className="relative">
-                  <input className={field} type={showPw ? "text" : "password"} value={pw} onChange={(e) => setPw(e.target.value)} placeholder="••••••••" />
-                  <button type="button" onClick={() => setShowPw((s) => !s)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-paper/50 hover:text-paper transition-colors" aria-label="Toggle password visibility">
-                    {showPw ? <IcX c="w-4 h-4" /> : <IcKey c="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label className={label}>{t("firstrun.pw2")}</label>
-                <input className={field} type={showPw ? "text" : "password"} value={pw2} onChange={(e) => setPw2(e.target.value)} placeholder="••••••••" />
-              </div>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className={label}>{t("firstrun.secQ")}</label>
-                <select className={field} value={qCustom ? "custom" : String(qIdx)} onChange={(e) => { if (e.target.value === "custom") setQCustom(true); else { setQCustom(false); setQIdx(Number(e.target.value)); } }}>
-                  {SEC_QUESTIONS.map((qq, i) => <option key={i} value={i}>{qq[lang]}</option>)}
-                  <option value="custom">{t("signup.secCustom")}</option>
-                </select>
-                {qCustom && <input className={`${field} mt-2`} value={qText} onChange={(e) => setQText(e.target.value)} placeholder={t("signup.secCustomPh")} />}
-              </div>
-              <div>
-                <label className={label}>{t("firstrun.secA")}</label>
-                <input className={field} value={ans} onChange={(e) => setAns(e.target.value)} placeholder="••••••" />
-                <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/40 mt-1.5">{t("signup.ansHint")}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 pt-1">
-              <span className={`w-2 h-2 ${okPw ? "bg-green2" : "bg-amber2"}`} />
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-paper/55">{t("firstrun.argon")}</p>
-            </div>
-            {err && <p className="text-[12.5px] text-[#e5a09a] border-l-2 border-crimson pl-3">{err}</p>}
-            <Btn type="submit" disabled={!valid} className="w-full !py-3 !text-[13px]">
-              <IcFinger c="w-4 h-4" /> {t("firstrun.submit")}
-            </Btn>
-          </form>
-        </div>
-        <p className="text-center font-mono text-[9.5px] uppercase tracking-[0.22em] text-paper/35 mt-5">{t("firstrun.after")}</p>
-      </div>
-    </div>
-  );
-}
-
-/* ================================================================== */
-/* Factor stepper — 1 password · 2 code · 3 security answer            */
-/* ================================================================== */
-function FactorSteps({ step, total }: { step: 1 | 2 | 3; total: 2 | 3 }) {
+function FactorSteps({ step }: { step: 1 | 2 | 3 }) {
   const t = useT();
   const factors: { key: string; icon: React.ReactNode }[] = [
     { key: "login.f1", icon: <IcKey c="w-3.5 h-3.5" /> },
-    { key: "login.f2", icon: <IcFinger c="w-3.5 h-3.5" /> },
-    { key: "login.f3", icon: <IcShield c="w-3.5 h-3.5" /> },
-  ].slice(0, total);
+    { key: "login.f2", icon: <IcLock c="w-3.5 h-3.5" /> },
+    { key: "login.f3", icon: <IcFinger c="w-3.5 h-3.5" /> },
+  ];
   return (
-    <div className="flex items-center px-7 pt-5">
+    <div className="flex items-center px-6 pt-5">
       {factors.map((f, i) => {
         const n = (i + 1) as 1 | 2 | 3;
         const done = n < step;
@@ -182,7 +56,7 @@ function FactorSteps({ step, total }: { step: 1 | 2 | 3; total: 2 | 3 }) {
               <span className={`w-7 h-7 border flex items-center justify-center transition-all ${active ? "border-[#e5a09a] bg-crimson/20 pulse-red" : done ? "border-green2/60 bg-green/15" : "border-navyline"}`}>
                 {done ? <IcCheck c="w-3.5 h-3.5" /> : f.icon}
               </span>
-              <span className="font-mono text-[9px] uppercase tracking-[0.14em] whitespace-nowrap">
+              <span className="font-mono text-[9px] uppercase tracking-[0.12em] whitespace-nowrap">
                 {n} · {t(f.key)}
               </span>
             </div>
@@ -195,15 +69,155 @@ function FactorSteps({ step, total }: { step: 1 | 2 | 3; total: 2 | 3 }) {
 }
 
 /* ================================================================== */
-/* Gateway — sign in (3 factors) / create account                      */
+/* Fingerprint sensor (factor 3)                                       */
+/* ================================================================== */
+function FingerprintGlyph({ tone }: { tone: "idle" | "scanning" | "done" }) {
+  return (
+    <svg
+      viewBox="0 0 120 120"
+      className={`w-full h-full transition-colors duration-500 ${tone === "done" ? "text-green2" : tone === "scanning" ? "text-[#e5a09a]" : "text-paper/60"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3.2"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M20 76 A40 40 0 0 1 100 76" strokeDasharray="54 10 32 9" />
+      <path d="M28 80 A32 32 0 0 1 92 80" strokeDasharray="42 9 26 7" />
+      <path d="M36 84 A24 24 0 0 1 84 84" strokeDasharray="31 8 19 6" />
+      <path d="M44 87 A16 16 0 0 1 76 87" strokeDasharray="21 7" />
+      <path d="M52 89 A8 8 0 0 1 68 89" />
+      <path d="M20 91 C33 99 50 102 60 102 C70 102 87 99 100 91" strokeDasharray="27 8 31 9" opacity="0.85" />
+      <path d="M31 99 C42 105 52 107 60 107 C68 107 78 105 89 99" strokeDasharray="18 6 23 7" opacity="0.6" />
+      <path d="M60 36 A22 22 0 0 1 82 58" opacity="0.65" />
+      <path d="M60 27 A31 31 0 0 1 91 58" opacity="0.45" />
+      <path d="M60 45 A13 13 0 0 1 73 58" opacity="0.9" />
+      <path d="M29 58 A31 31 0 0 1 44 32" opacity="0.45" />
+    </svg>
+  );
+}
+
+function BiometricStep({ userName, onMatch }: { userName: string; onMatch: (score: string) => void }) {
+  const t = useT();
+  const reduced = useReducedMotion();
+  const [phase, setPhase] = useState<"idle" | "scanning" | "done">("idle");
+  const [released, setReleased] = useState(false);
+  const [score] = useState(() => (98.6 + Math.random() * 1.3).toFixed(1));
+  const timer = useRef<number | null>(null);
+  const doneTimer = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timer.current) window.clearTimeout(timer.current);
+      if (doneTimer.current) window.clearTimeout(doneTimer.current);
+    },
+    []
+  );
+
+  const start = () => {
+    if (phase !== "idle") return;
+    setReleased(false);
+    setPhase("scanning");
+    timer.current = window.setTimeout(() => {
+      setPhase("done");
+      doneTimer.current = window.setTimeout(() => onMatch(score), reduced ? 200 : 750);
+    }, reduced ? 300 : 1800);
+  };
+  const cancel = () => {
+    if (phase !== "scanning") return;
+    if (timer.current) window.clearTimeout(timer.current);
+    setPhase("idle");
+    setReleased(true);
+  };
+
+  return (
+    <>
+      <style>{`
+        @keyframes bioscan{0%{top:8%;opacity:0}12%{opacity:1}88%{opacity:1}100%{top:88%;opacity:0}}
+        @keyframes biofill{from{width:6%}to{width:100%}}
+        @keyframes bioring{0%{box-shadow:0 0 0 0 rgba(85,145,106,.55)}100%{box-shadow:0 0 0 16px rgba(85,145,106,0)}}
+      `}</style>
+      <header className="px-7 pt-4 pb-2">
+        <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e5a09a]">{t("login.bioKicker")}</p>
+        <h2 className="font-display font-semibold uppercase tracking-wide text-[22px] mt-1">{t("login.bioTitle")}</h2>
+        <p className="text-[12.5px] text-paper/55 mt-1.5">
+          {t("login.bioSub")} <span className="text-paper/80 font-semibold">{userName}</span>
+        </p>
+      </header>
+
+      <div className="px-7 pb-5 flex flex-col items-center">
+        <button
+          type="button"
+          onPointerDown={start}
+          onPointerUp={cancel}
+          onPointerLeave={cancel}
+          onKeyDown={(e) => {
+            if ((e.key === "Enter" || e.key === " ") && phase === "idle") {
+              e.preventDefault();
+              start();
+            }
+          }}
+          aria-label={t("login.bioHold")}
+          className={`relative w-44 h-44 rounded-full border-2 overflow-hidden select-none transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e5a09a] ${
+            phase === "done"
+              ? "border-green2 bg-green/10"
+              : phase === "scanning"
+              ? "border-[#e5a09a] bg-crimson/10 scale-[1.03]"
+              : "border-navyline bg-navy2/50 hover:border-paper/40 active:scale-[0.98]"
+          }`}
+          style={phase === "done" ? { animation: "bioring 0.9s ease-out 2" } : undefined}
+        >
+          <div className="absolute inset-4">
+            <FingerprintGlyph tone={phase} />
+          </div>
+          {phase === "scanning" && (
+            <span
+              className="absolute left-[10%] right-[10%] h-[3px] bg-[#e5a09a] rounded-full"
+              style={{
+                animation: `bioscan ${reduced ? 0.3 : 1.8}s linear ${reduced ? "1" : "infinite"}`,
+                boxShadow: "0 0 14px 3px rgba(229,160,154,0.55)",
+              }}
+            />
+          )}
+          {phase === "done" && (
+            <span className="absolute inset-0 flex items-center justify-center bg-navy/55 fade-in">
+              <span className="w-14 h-14 rounded-full bg-green2 text-navy flex items-center justify-center stamp-in">
+                <IcCheck c="w-7 h-7" />
+              </span>
+            </span>
+          )}
+        </button>
+
+        {/* progress rail */}
+        <div className="w-44 h-[3px] bg-navyline mt-4 overflow-hidden">
+          {phase === "scanning" && (
+            <span className="block h-full bg-[#e5a09a]" style={{ animation: `biofill ${reduced ? 0.3 : 1.8}s linear forwards` }} />
+          )}
+          {phase === "done" && <span className="block h-full w-full bg-green2" />}
+        </div>
+
+        <p className={`font-mono text-[10.5px] uppercase tracking-[0.18em] mt-3 ${phase === "done" ? "text-green2" : phase === "scanning" ? "text-[#e5a09a]" : "text-paper/50"}`}>
+          {phase === "done" ? `${t("login.bioOk")} · ${score}%` : phase === "scanning" ? t("login.bioScanning") : t("login.bioHold")}
+        </p>
+        {released && phase === "idle" && <p className="text-[12px] text-[#e5a09a] mt-2 fade-in">{t("login.bioCancel")}</p>}
+        <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-paper/35 mt-4 text-center">
+          Template matched on-device · raw print never leaves the sensor
+        </p>
+      </div>
+    </>
+  );
+}
+
+/* ================================================================== */
+/* Gateway — always shows Sign in / Create account                     */
 /* ================================================================== */
 function Gateway(p: Props) {
   const t = useT();
-  const { lang } = usePrefs();
   const toast = useToast();
+  const empty = p.users.length === 0;
 
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [step, setStep] = useState<"creds" | "mfa" | "sec">("creds");
+  const [mode, setMode] = useState<"signin" | "signup">(empty ? "signup" : "signin");
+  const [step, setStep] = useState<"creds" | "mfa" | "bio">("creds");
   const [pending, setPending] = useState<User | null>(null);
 
   const [userId, setUserId] = useState("");
@@ -214,26 +228,23 @@ function Gateway(p: Props) {
   const [fails, setFails] = useState(0);
   const [lockUntil, setLockUntil] = useState<number | null>(null);
   const [pickOpen, setPickOpen] = useState(false);
+  const [roleFilter, setRoleFilter] = useState<"ALL" | RoleId>("ALL");
 
   const [mfaCode] = useState(() => String(Math.floor(100000 + Math.random() * 900000)));
   const [mfaInput, setMfaInput] = useState("");
-  const [secInput, setSecInput] = useState("");
-  const [secFails, setSecFails] = useState(0);
 
   const device = useMemo(() => deviceInfo(), []);
   const ip = useMemo(() => `10.14.2.${Math.floor(20 + Math.random() * 60)}`, []);
 
-  const total: 2 | 3 = pending?.secQuestion ? 3 : 2;
   const stepN: 1 | 2 | 3 = step === "creds" ? 1 : step === "mfa" ? 2 : 3;
+  const filteredPrincipals = useMemo(
+    () => p.users.filter((u) => (roleFilter === "ALL" ? true : u.role === roleFilter)),
+    [p.users, roleFilter]
+  );
 
   const fail = (msg: string) => {
     setErr(msg);
     setShake((s) => s + 1);
-  };
-
-  const findUser = (needleRaw: string) => {
-    const needle = needleRaw.trim().toLowerCase();
-    return p.users.find((x) => x.id.toLowerCase() === needle || x.email.toLowerCase() === needle);
   };
 
   /* ---------------- factor 1 · password ---------------- */
@@ -243,7 +254,8 @@ function Gateway(p: Props) {
       fail(`Account locked — retry in ${Math.ceil((lockUntil - now) / 1000)}s`);
       return;
     }
-    const u = findUser(userId);
+    const needle = userId.trim().toLowerCase();
+    const u = p.users.find((x) => x.id.toLowerCase() === needle || x.email.toLowerCase() === needle);
     if (!u || hashPassword(password) !== u.passHash) {
       const next = fails + 1;
       setFails(next);
@@ -267,6 +279,7 @@ function Gateway(p: Props) {
           location: "Gateway",
           note: "3 consecutive failures — temporary lockout applied · security event raised",
         });
+        p.pushSecurity?.("CRITICAL", "CREDENTIAL_STUFFING", `3 failed logins from ${ip} — account locked, pattern flagged`, u?.id);
         fail("3 failed attempts — account locked for 30 seconds. Event escalated to security.");
         setFails(0);
       } else {
@@ -282,52 +295,29 @@ function Gateway(p: Props) {
     setErr(null);
     setPending(u);
     setStep("mfa");
-    toast("info", "Factor 1 passed — MFA challenge issued", "6-digit code dispatched (demo code shown below).");
+    toast("info", "Factor 1 passed — one-time code issued", "6-digit code dispatched (demo code shown below).");
   };
 
   /* ---------------- factor 2 · one-time code ---------------- */
   const submitMfa = () => {
     const u = pending!;
     if (mfaInput !== mfaCode) {
-      p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_FAIL", device, ip, location: "Gateway", note: "Incorrect TOTP" });
+      p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_FAIL", device, ip, location: "Gateway", note: "Incorrect one-time code" });
       setShake((s) => s + 1);
-      setErr("Incorrect verification code. Ledgered as MFA_FAIL.");
+      setErr("Incorrect one-time code. Ledgered as MFA_FAIL.");
       return;
     }
-    p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_OK", device, ip, location: "Gateway", note: "TOTP accepted" });
+    p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_OK", device, ip, location: "Gateway", note: "One-time code accepted" });
     setErr(null);
-    if (u.secQuestion && u.secAnswerHash) {
-      setStep("sec");
-      toast("info", "Factor 2 passed — security answer required", "One more factor before entry.");
-    } else {
-      p.onLogin(u.id, device, ip);
-    }
+    setMfaInput("");
+    setStep("bio");
+    toast("info", "Factor 2 passed — fingerprint required", "One more factor before entry.");
   };
 
-  /* ---------------- factor 3 · security answer ---------------- */
-  const submitSec = () => {
+  /* ---------------- factor 3 · fingerprint ---------------- */
+  const onBioMatch = (score: string) => {
     const u = pending!;
-    if (hashSecret(secInput) !== u.secAnswerHash) {
-      const next = secFails + 1;
-      setSecFails(next);
-      p.logLoginEvent({ userId: u.id, userName: u.name, kind: "FA3_FAIL", device, ip, location: "Gateway", note: `Incorrect security answer · attempt ${next} of 3` });
-      setShake((s) => s + 1);
-      if (next >= 3) {
-        setLockUntil(Date.now() + 30000);
-        p.logLoginEvent({ userId: u.id, userName: u.name, kind: "LOCKOUT", device, ip, location: "Gateway", note: "3 failed security answers — lockout applied" });
-        p.pushSecurity?.("WARN", "FA3_BRUTE", `3 failed security answers for ${u.id} from ${ip}`, u.id);
-        setSecFails(0);
-        setStep("creds");
-        setPending(null);
-        setSecInput("");
-        setMfaInput("");
-        fail(t("login.secLock"));
-      } else {
-        setErr(`${t("login.secWrong")} (${next}/3)`);
-      }
-      return;
-    }
-    p.logLoginEvent({ userId: u.id, userName: u.name, kind: "FA3_OK", device, ip, location: "Gateway", note: "Security answer verified · 3rd factor" });
+    p.logLoginEvent({ userId: u.id, userName: u.name, kind: "FA3_OK", device, ip, location: "Gateway", note: `Fingerprint verified · match score ${score}%` });
     p.onLogin(u.id, device, ip);
   };
 
@@ -344,9 +334,9 @@ function Gateway(p: Props) {
           </div>
         </div>
 
-        <div className="mt-14 relative z-10">
+        <div className="mt-12 relative z-10">
           <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[#e5a09a]">{t("login.3fa")}</p>
-          <h1 className="font-display font-semibold uppercase leading-[1.04] text-[46px] tracking-wide mt-3">
+          <h1 className="font-display font-semibold uppercase leading-[1.04] text-[44px] tracking-wide mt-3">
             {t("login.h1a")}
             <br />
             {t("login.h1b")}
@@ -355,11 +345,11 @@ function Gateway(p: Props) {
         </div>
 
         {/* the three factors, visualised */}
-        <div className="mt-10 relative z-10 max-w-md">
+        <div className="mt-9 relative z-10 max-w-md">
           {[
             { n: 1, k: "login.f1", v: "login.k1v", icon: <IcKey c="w-4 h-4" /> },
-            { n: 2, k: "login.f2", v: "login.k3v", icon: <IcFinger c="w-4 h-4" /> },
-            { n: 3, k: "login.f3", v: "login.k4v", icon: <IcShield c="w-4 h-4" /> },
+            { n: 2, k: "login.f2", v: "login.k3v", icon: <IcLock c="w-4 h-4" /> },
+            { n: 3, k: "login.f3", v: "login.f3v", icon: <IcFinger c="w-4 h-4" /> },
           ].map((f, i) => (
             <div key={f.n} className="rise flex items-center gap-3 border border-navyline bg-navy2/40 px-4 py-2.5 mb-2" style={{ animationDelay: `${i * 110}ms` }}>
               <span className="w-8 h-8 border border-[#e5a09a]/50 text-[#e5a09a] flex items-center justify-center shrink-0">{f.icon}</span>
@@ -401,13 +391,13 @@ function Gateway(p: Props) {
           )}
 
           <div key={shake} className={`bg-navy/80 border border-navyline backdrop-blur-sm ${shake ? "shake-x" : ""}`}>
-            {/* LOGIN / SIGNUP tabs */}
-            <div className="grid grid-cols-2 border-b border-navyline" role="tablist">
+            {/* LOGIN / SIGNUP — always visible */}
+            <div className="grid grid-cols-2 border-b border-navyline" role="tablist" aria-label="Authentication mode">
               <button
                 role="tab"
                 aria-selected={mode === "signin"}
                 onClick={() => { setMode("signin"); setErr(null); }}
-                className={`font-display font-semibold uppercase tracking-[0.14em] text-[13px] py-3.5 transition-colors border-b-2 ${
+                className={`font-display font-semibold uppercase tracking-[0.14em] text-[13.5px] py-4 transition-colors border-b-2 ${
                   mode === "signin" ? "text-paper border-crimson bg-navy2/50" : "text-paper/45 border-transparent hover:text-paper/80"
                 }`}
               >
@@ -417,7 +407,7 @@ function Gateway(p: Props) {
                 role="tab"
                 aria-selected={mode === "signup"}
                 onClick={() => { setMode("signup"); setErr(null); }}
-                className={`font-display font-semibold uppercase tracking-[0.14em] text-[13px] py-3.5 transition-colors border-b-2 ${
+                className={`font-display font-semibold uppercase tracking-[0.14em] text-[13.5px] py-4 transition-colors border-b-2 ${
                   mode === "signup" ? "text-paper border-green2 bg-navy2/50" : "text-paper/45 border-transparent hover:text-paper/80"
                 }`}
               >
@@ -426,17 +416,30 @@ function Gateway(p: Props) {
             </div>
 
             {mode === "signup" ? (
-              <SignupForm p={p} onCreated={(email) => { setMode("signin"); setUserId(email); setStep("creds"); setErr(null); setPending(null); }} />
+              <SignupForm
+                p={p}
+                empty={empty}
+                onCreated={(email) => {
+                  setMode("signin");
+                  setUserId(email);
+                  setStep("creds");
+                  setErr(null);
+                  setPending(null);
+                }}
+              />
             ) : (
               <>
-                <FactorSteps step={stepN} total={pending ? total : 3} />
+                <FactorSteps step={stepN} />
+
                 {step === "creds" && (
                   <>
                     <header className="px-7 pt-4 pb-3">
-                      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e5a09a]">{t("login.step")} — {t("login.f1")}</p>
+                      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e5a09a]">
+                        {t("login.stepN")} 1 {t("login.ofN")} 3 · {t("login.f1")}
+                      </p>
                       <h2 className="font-display font-semibold uppercase tracking-wide text-[22px] mt-1">{t("login.title")}</h2>
                     </header>
-                    <form className="px-7 pb-5 space-y-4" onSubmit={(e) => { e.preventDefault(); submitCreds(); }}>
+                    <form className="px-7 pb-4 space-y-4" onSubmit={(e) => { e.preventDefault(); submitCreds(); }}>
                       <div>
                         <label className={label}>{t("login.id")}</label>
                         <div className="relative">
@@ -455,32 +458,62 @@ function Gateway(p: Props) {
                         </div>
                       </div>
                       {err && <p className="text-[12.5px] text-[#e5a09a] border-l-2 border-crimson pl-3">{err}</p>}
-                      <Btn type="submit" className="w-full !py-3 !text-[13px]"><IcKey c="w-4 h-4" /> {t("login.continue")}</Btn>
+                      <Btn type="submit" disabled={empty} className="w-full !py-3 !text-[13px]"><IcKey c="w-4 h-4" /> {t("login.continue")}</Btn>
                     </form>
+
                     <footer className="px-7 pb-5">
-                      <div className="relative">
-                        <button onClick={() => setPickOpen((o) => !o)} className="w-full flex items-center justify-between border border-navyline px-3 py-2.5 text-[11.5px] text-paper/60 hover:text-paper hover:border-paper/40 transition-colors">
-                          <span className="font-mono uppercase tracking-[0.14em] text-[9.5px]">{t("login.principals")} · {p.users.length}</span>
-                          <span className={`transition-transform ${pickOpen ? "rotate-180" : ""}`}><IcChevD c="w-3.5 h-3.5" /></span>
-                        </button>
-                        {pickOpen && (
-                          <ul className="modal-in absolute left-0 right-0 bottom-full mb-1 bg-navy border border-navyline shadow-xl shadow-black/40 z-20 max-h-56 overflow-y-auto">
-                            {p.users.map((u) => (
-                              <li key={u.id}>
-                                <button onClick={() => { setUserId(u.id); setPickOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-navy2 transition-colors">
-                                  <span className={`w-1.5 h-6 ${TONE_BG[ROLE_BANNER[u.role].tone]}`} />
-                                  <span className="min-w-0 flex-1">
-                                    <span className="block text-[12.5px] font-semibold leading-tight">{u.name}</span>
-                                    <span className="block font-mono text-[9px] uppercase tracking-widest text-paper/45">{ROLE_LABEL[u.role]} · {u.id}</span>
-                                  </span>
-                                  {u.status === "SUSPENDED" && <span className="font-mono text-[8.5px] uppercase text-crimson">suspended</span>}
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                      <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-paper/35 mt-3 text-center">{t("login.lockNote")}</p>
+                      {empty ? (
+                        <div className="border border-dashed border-navyline bg-navy2/40 px-4 py-3.5 text-center">
+                          <p className="text-[12.5px] text-paper/70 leading-relaxed">{t("login.noAccounts")}</p>
+                          <Btn kind="green" className="mt-3" onClick={() => setMode("signup")}><IcUser c="w-3.5 h-3.5" /> {t("login.goSignup")}</Btn>
+                        </div>
+                      ) : (
+                        <>
+                          {/* role filter + principal picker */}
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <label className="font-mono uppercase tracking-[0.14em] text-[9.5px] text-paper/50 shrink-0" htmlFor="roleFilter">{t("login.roleLbl")}</label>
+                            <select
+                              id="roleFilter"
+                              value={roleFilter}
+                              onChange={(e) => setRoleFilter(e.target.value as "ALL" | RoleId)}
+                              className="flex-1 bg-navy2/60 border border-navyline px-2 py-2 font-mono text-[10.5px] uppercase text-paper/80 focus:outline-none focus:border-[#e5a09a] transition-colors"
+                            >
+                              <option value="ALL">{t("login.allRoles")}</option>
+                              {ALL_ROLES.map((r) => (
+                                <option key={r} value={r}>{t(`role.${r}`)}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="relative">
+                            <button onClick={() => setPickOpen((o) => !o)} className="w-full flex items-center justify-between border border-navyline px-3 py-2.5 text-[11.5px] text-paper/60 hover:text-paper hover:border-paper/40 transition-colors">
+                              <span className="font-mono uppercase tracking-[0.14em] text-[9.5px]">
+                                {t("login.principals")} · {filteredPrincipals.length}
+                              </span>
+                              <span className={`transition-transform ${pickOpen ? "rotate-180" : ""}`}><IcChevD c="w-3.5 h-3.5" /></span>
+                            </button>
+                            {pickOpen && (
+                              <ul className="modal-in absolute left-0 right-0 bottom-full mb-1 bg-navy border border-navyline shadow-xl shadow-black/40 z-20 max-h-56 overflow-y-auto">
+                                {filteredPrincipals.map((u) => (
+                                  <li key={u.id}>
+                                    <button onClick={() => { setUserId(u.id); setPickOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-navy2 transition-colors">
+                                      <span className={`w-1.5 h-6 ${TONE_BG[ROLE_BANNER[u.role].tone]}`} />
+                                      <span className="min-w-0 flex-1">
+                                        <span className="block text-[12.5px] font-semibold leading-tight">{u.name}</span>
+                                        <span className="block font-mono text-[9px] uppercase tracking-widest text-paper/45">{t(`role.${u.role}`)} · {u.id}</span>
+                                      </span>
+                                      {u.status === "SUSPENDED" && <span className="font-mono text-[8.5px] uppercase text-crimson">suspended</span>}
+                                    </button>
+                                  </li>
+                                ))}
+                                {filteredPrincipals.length === 0 && (
+                                  <li className="px-3 py-4 text-center font-mono text-[9.5px] uppercase tracking-widest text-paper/40">—</li>
+                                )}
+                              </ul>
+                            )}
+                          </div>
+                          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-paper/35 mt-3 text-center">{t("login.lockNote")}</p>
+                        </>
+                      )}
                     </footer>
                   </>
                 )}
@@ -488,9 +521,11 @@ function Gateway(p: Props) {
                 {step === "mfa" && (
                   <>
                     <header className="px-7 pt-4 pb-3">
-                      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e5a09a]">{t("login.mfaStep")}</p>
+                      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e5a09a]">
+                        {t("login.stepN")} 2 {t("login.ofN")} 3 · {t("login.f2")}
+                      </p>
                       <h2 className="font-display font-semibold uppercase tracking-wide text-[22px] mt-1">{t("login.mfaTitle")}</h2>
-                      <p className="text-[12px] text-paper/55 mt-1.5">{t("login.mfaSub")}</p>
+                      <p className="text-[12.5px] text-paper/55 mt-1.5">{t("login.mfaSub")}</p>
                     </header>
                     <form className="px-7 pb-5 space-y-4" onSubmit={(e) => { e.preventDefault(); submitMfa(); }}>
                       <input
@@ -500,6 +535,7 @@ function Gateway(p: Props) {
                         placeholder="······"
                         inputMode="numeric"
                         autoFocus
+                        aria-label={t("login.mfaTitle")}
                       />
                       <div className="border border-dashed border-navyline bg-navy2/40 px-3 py-2 flex items-center justify-between">
                         <span className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-paper/50">{t("login.demoCode")}</span>
@@ -508,43 +544,15 @@ function Gateway(p: Props) {
                       {err && <p className="text-[12.5px] text-[#e5a09a] border-l-2 border-crimson pl-3">{err}</p>}
                       <div className="flex gap-2">
                         <Btn kind="ghost" onClick={() => { setStep("creds"); setMfaInput(""); setErr(null); }} className="!text-paper/70 !border-navyline hover:!border-paper/40">{t("act.back")}</Btn>
-                        <Btn type="submit" disabled={mfaInput.length !== 6} className="flex-1"><IcFinger c="w-4 h-4" /> {t("login.verify")}</Btn>
+                        <Btn type="submit" disabled={mfaInput.length !== 6} className="flex-1"><IcLock c="w-4 h-4" /> {t("login.verify")}</Btn>
                       </div>
                     </form>
                   </>
                 )}
 
-                {step === "sec" && pending && (
-                  <>
-                    <header className="px-7 pt-4 pb-3">
-                      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e5a09a]">{t("login.step")} 3 {t("login.ofN")} 3 · {t("login.f3")}</p>
-                      <h2 className="font-display font-semibold uppercase tracking-wide text-[22px] mt-1">{t("login.secTitle")}</h2>
-                      <p className="text-[12px] text-paper/55 mt-1.5">{t("login.secSub")}</p>
-                    </header>
-                    <form className="px-7 pb-5 space-y-4" onSubmit={(e) => { e.preventDefault(); submitSec(); }}>
-                      <div className="border border-navyline bg-navy2/40 px-4 py-3">
-                        <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-paper/45 mb-1">{t("login.secTitle")}</p>
-                        <p className="text-[14.5px] font-semibold leading-snug">{pending.secQuestion}</p>
-                      </div>
-                      <input
-                        className={field}
-                        type="password"
-                        value={secInput}
-                        onChange={(e) => setSecInput(e.target.value)}
-                        placeholder={t("login.secPh")}
-                        autoFocus
-                      />
-                      {err && <p className="text-[12.5px] text-[#e5a09a] border-l-2 border-crimson pl-3">{err}</p>}
-                      <div className="flex gap-2">
-                        <Btn kind="ghost" onClick={() => { setStep("mfa"); setSecInput(""); setErr(null); }} className="!text-paper/70 !border-navyline hover:!border-paper/40">{t("act.back")}</Btn>
-                        <Btn type="submit" disabled={secInput.trim().length < 1} className="flex-1"><IcShield c="w-4 h-4" /> {t("login.verify")}</Btn>
-                      </div>
-                      <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-paper/35 text-center">{t("signup.ansHint")}</p>
-                    </form>
-                  </>
-                )}
+                {step === "bio" && pending && <BiometricStep userName={pending.name} onMatch={onBioMatch} />}
 
-                <footer className="px-7 pb-4 flex items-center gap-2 justify-center border-t border-navyline pt-3.5">
+                <footer className="px-7 py-3.5 flex items-center gap-2 justify-center border-t border-navyline">
                   <span className="w-1.5 h-1.5 bg-green2 pulse-dot" />
                   <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-paper/40">{t("login.tls")}</p>
                 </footer>
@@ -558,34 +566,29 @@ function Gateway(p: Props) {
 }
 
 /* ================================================================== */
-/* Public self-signup — parties & citizens                             */
+/* Create account — role dropdown · founding registrar when empty      */
 /* ================================================================== */
-function SignupForm({ p, onCreated }: { p: Props; onCreated: (email: string) => void }) {
+function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreated: (email: string) => void }) {
   const t = useT();
-  const { lang } = usePrefs();
   const [name, setName] = useState("");
-  const [role, setRole] = useState<"VICTIM" | "ACCUSED">("VICTIM");
+  const [role, setRole] = useState<RoleId>(empty ? "ADMIN" : "VICTIM");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
-  const [qIdx, setQIdx] = useState(0);
-  const [qCustom, setQCustom] = useState(false);
-  const [qText, setQText] = useState("");
-  const [ans, setAns] = useState("");
+  const [stationId, setStationId] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [shake, setShake] = useState(0);
 
   const okPw = pw.length >= 8;
-  const okQ = !qCustom || qText.trim().length >= 6;
-  const valid = name.trim().length >= 3 && email.includes("@") && okPw && pw === pw2 && okQ && ans.trim().length >= 2;
+  const valid = name.trim().length >= 3 && email.includes("@") && okPw && pw === pw2 && (role !== "POLICE" || stationId.trim().length > 1);
 
   const submit = () => {
     if (!valid) {
-      setErr(!okPw ? "Password must be at least 8 characters." : pw !== pw2 ? "Passwords do not match." : !okQ ? "Write your custom question." : "Complete all fields.");
+      setErr(!okPw ? "Password must be at least 8 characters." : pw !== pw2 ? "Passwords do not match." : "Complete all fields.");
       setShake((s) => s + 1);
       return;
     }
-    const ok = p.onSignup({ name: name.trim(), role, email: email.trim(), password: pw, secQuestion: qCustom ? qText.trim() : SEC_QUESTIONS[qIdx][lang], secAnswer: ans });
+    const ok = p.onSignup({ name: name.trim(), role, email: email.trim(), password: pw, courtIds: [], stationId: stationId.trim() });
     if (!ok) {
       setErr(t("signup.dupe"));
       setShake((s) => s + 1);
@@ -597,36 +600,46 @@ function SignupForm({ p, onCreated }: { p: Props; onCreated: (email: string) => 
   return (
     <div key={shake} className={shake ? "shake-x" : ""}>
       <header className="px-7 pt-5 pb-3">
-        <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-green2">{t("signup.kicker")}</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-green2">{empty ? t("firstrun.kicker") : t("signup.kicker")}</p>
         <h2 className="font-display font-semibold uppercase tracking-wide text-[22px] mt-1">{t("signup.title")}</h2>
-        <p className="text-[12px] text-paper/55 leading-relaxed mt-1.5">{t("signup.lede")}</p>
+        <p className="text-[12.5px] text-paper/55 leading-relaxed mt-1.5">
+          {empty ? t("signup.foundingNote") : t("signup.lede")}
+        </p>
       </header>
       <form className="px-7 pb-5 space-y-4" onSubmit={(e) => { e.preventDefault(); submit(); }}>
+        <div>
+          <label className={label}>{t("signup.roleLbl")}</label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-paper/40"><IcUser c="w-4 h-4" /></span>
+            <select
+              className={`${field} pl-9 appearance-none`}
+              value={role}
+              disabled={empty}
+              onChange={(e) => setRole(e.target.value as RoleId)}
+              aria-label={t("signup.roleLbl")}
+            >
+              {ALL_ROLES.map((r) => (
+                <option key={r} value={r}>{t(`role.${r}`)}</option>
+              ))}
+            </select>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-paper/40 pointer-events-none"><IcChevD c="w-3.5 h-3.5" /></span>
+          </div>
+          {empty && <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-amber2 mt-1.5">{t("signup.foundingNote")}</p>}
+        </div>
         <div>
           <label className={label}>{t("firstrun.name")}</label>
           <input className={field} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("signup.namePh")} />
         </div>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label className={label}>{t("signup.role")}</label>
-            <div className="grid grid-cols-2 gap-2">
-              {(["VICTIM", "ACCUSED"] as const).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRole(r)}
-                  className={`font-mono text-[10px] uppercase tracking-wide px-2 py-2.5 border transition-colors ${role === r ? "bg-green/20 text-green2 border-green2/60" : "bg-navy2/60 text-paper/55 border-navyline hover:border-paper/40"}`}
-                >
-                  {ROLE_LABEL[r]}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className={label}>{t("firstrun.email")}</label>
-            <input className={field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("signup.emailPh")} />
-          </div>
+        <div>
+          <label className={label}>{t("firstrun.email")}</label>
+          <input className={field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("signup.emailPh")} />
         </div>
+        {role === "POLICE" && !empty && (
+          <div>
+            <label className={label}>{t("signup.stationLbl")}</label>
+            <input className={field} value={stationId} onChange={(e) => setStationId(e.target.value)} placeholder="PS-…" />
+          </div>
+        )}
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className={label}>{t("firstrun.pw")}</label>
@@ -635,21 +648,6 @@ function SignupForm({ p, onCreated }: { p: Props; onCreated: (email: string) => 
           <div>
             <label className={label}>{t("firstrun.pw2")}</label>
             <input className={field} type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} placeholder="••••••••" />
-          </div>
-        </div>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label className={label}>{t("firstrun.secQ")}</label>
-            <select className={field} value={qCustom ? "custom" : String(qIdx)} onChange={(e) => { if (e.target.value === "custom") setQCustom(true); else { setQCustom(false); setQIdx(Number(e.target.value)); } }}>
-              {SEC_QUESTIONS.map((qq, i) => <option key={i} value={i}>{qq[lang]}</option>)}
-              <option value="custom">{t("signup.secCustom")}</option>
-            </select>
-            {qCustom && <input className={`${field} mt-2`} value={qText} onChange={(e) => setQText(e.target.value)} placeholder={t("signup.secCustomPh")} />}
-          </div>
-          <div>
-            <label className={label}>{t("firstrun.secA")}</label>
-            <input className={field} type="password" value={ans} onChange={(e) => setAns(e.target.value)} placeholder="••••••" />
-            <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/40 mt-1.5">{t("signup.ansHint")}</p>
           </div>
         </div>
         {err && <p className="text-[12.5px] text-[#e5a09a] border-l-2 border-crimson pl-3">{err}</p>}

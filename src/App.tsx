@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChainLink } from "./lib";
 import { fmtClock, makeLink, uid, useLocalState, useNow, verifyChain, versionHash } from "./lib";
-import type { CaseFile, Court, EvidenceItem, LegalDoc, LoginEvent, Notice, SecurityEvent, TransferRec, User } from "./data";
+import type { CaseFile, Court, EvidenceItem, LegalDoc, LoginEvent, Notice, RoleId, SecurityEvent, TransferRec, User } from "./data";
 import {
   COURTS as COURTS_SEED, ROLE_BANNER, ROLE_LABEL, SEED_AUDIT, SEED_CASES, SEED_DOCUMENTS, SEED_EVIDENCE,
   SEED_LOGINS, SEED_NOTICES, SEED_SECURITY, USERS, canDownload, canSeeCase, canSeeDoc, canUpload, keyFingerprint,
 } from "./data";
-import { hashPassword, hashSecret } from "./lib";
+import { hashPassword } from "./lib";
 import { Btn, Chip, ToastProvider, useToast } from "./ui";
 import { PrefsProvider, usePrefs, useT } from "./i18n";
 import {
@@ -144,12 +144,6 @@ function Portal() {
     setSession(null);
     setSelCase(null);
     setForbidden(null);
-  };
-
-  const createFirstAdmin = (u: User) => {
-    setUsers([u]);
-    setAudit((prev) => [...prev, makeLink(undefined, { actor: u.name, role: "Court Administrator", action: "REGISTRY_PROVISIONED", detail: "Founding registrar created — genesis of this registry" })]);
-    toast("success", "Registry provisioned", `${u.name} is the founding Court Administrator. Sign in to continue.`);
   };
 
   /* ---------------- authorization gateway ---------------- */
@@ -421,39 +415,56 @@ function Portal() {
         pp.role === "POLICE" ? "Assigned investigations only" : pp.role === "ACCUSED" || pp.role === "VICTIM" ? "Own cases · permitted docs only" :
         pp.role === "ADMIN" ? "System administration" : "Read-only audit & security",
       passHash: hashPassword(pp.password),
-      secQuestion: pp.secQuestion,
-      secAnswerHash: hashSecret(pp.secAnswer),
     };
     setUsers((prev) => [...prev, nu]);
     log("USER_CREATED", { detail: `${pp.name} provisioned as ${ROLE_LABEL[pp.role]} (${nu.id}) · 3-factor sign-in enforced` });
     toast("success", "Principal provisioned", `${nu.id} · share the initial password in person.`);
   };
 
-  /* ---------------- public self-signup (parties & citizens) ---------------- */
-  const signup: (sp: { name: string; role: "VICTIM" | "ACCUSED"; email: string; password: string; secQuestion: string; secAnswer: string }) => boolean = (sp) => {
-    const exists = users.some((x) => x.email.toLowerCase() === sp.email.toLowerCase());
-    if (exists) {
-      log("USER_CREATED", { detail: `Signup rejected — email already registered (${sp.email})`, actor: sp.name, role: ROLE_LABEL[sp.role] });
+  /* ---------------- signup · public self-registration + founding registrar ---------------- */
+  const signup: (sp: { name: string; role: RoleId; email: string; password: string; courtIds: string[]; stationId: string }) => boolean = (sp) => {
+    const first = users.length === 0;
+    const role: RoleId = first ? "ADMIN" : sp.role;
+
+    if (!first && users.some((x) => x.email.toLowerCase() === sp.email.toLowerCase())) {
+      log("USER_CREATED", { detail: `Signup rejected — email already registered (${sp.email})`, actor: sp.name, role: ROLE_LABEL[role] });
       return false;
     }
+
     const nu: User = {
       id: uid("USR"),
       name: sp.name,
-      role: sp.role,
-      unit: ROLE_LABEL[sp.role],
-      courtIds: [],
+      role,
+      unit: first ? "Court Registry" : ROLE_LABEL[role],
+      courtIds: first ? [] : role === "ADMIN" || role === "AUDITOR" ? courts.map((x) => x.id) : role === "JUDGE" ? sp.courtIds : [],
+      stationId: role === "POLICE" && sp.stationId ? sp.stationId.toUpperCase() : undefined,
       email: sp.email,
       keyFp: keyFingerprint(),
       status: "ACTIVE",
-      clearanceNote: "Own cases · permitted docs only",
+      clearanceNote: first
+        ? "Founding registrar · full administration"
+        : role === "JUDGE" ? "Assigned court docket"
+        : role === "LAWYER" ? "Cases on record as counsel"
+        : role === "POLICE" ? "Assigned investigations only"
+        : role === "ACCUSED" || role === "VICTIM" ? "Own cases · permitted docs only"
+        : role === "ADMIN" ? "System administration"
+        : "Read-only audit & security",
       passHash: hashPassword(sp.password),
-      secQuestion: sp.secQuestion,
-      secAnswerHash: hashSecret(sp.secAnswer),
     };
     setUsers((prev) => [...prev, nu]);
-    log("USER_CREATED", { detail: `${sp.name} self-registered as ${ROLE_LABEL[sp.role]} (${nu.id}) · 3-factor sign-in enforced`, actor: sp.name, role: ROLE_LABEL[sp.role] });
-    notify(nu.id, "SYSTEM", `Welcome ${sp.name}. Your account is ready — case files appear once the registry links you as a party.`);
-    toast("success", "Account created", `${nu.id} · now sign in with your password.`);
+
+    if (first) {
+      log("REGISTRY_PROVISIONED", {
+        detail: `Founding registrar ${sp.name} (${nu.id}) provisioned — the registry's first permanent entry · 3-factor sign-in enforced`,
+        actor: sp.name,
+        role: ROLE_LABEL.ADMIN,
+      });
+      toast("success", "Registry provisioned", `${nu.id} · you are the founding Court Administrator. Sign in to begin.`);
+    } else {
+      log("USER_CREATED", { detail: `${sp.name} self-registered as ${ROLE_LABEL[role]} (${nu.id}) · 3-factor sign-in enforced`, actor: sp.name, role: ROLE_LABEL[role] });
+      notify(nu.id, "SYSTEM", `Welcome ${sp.name}. Your account is ready — case files appear once the registry links you as a party.`);
+      toast("success", "Account created", `${nu.id} · now sign in with your password.`);
+    }
     return true;
   };
 
@@ -508,7 +519,7 @@ function Portal() {
 
   /* ---------------- render ---------------- */
   if (!session || !user) {
-    return <Login users={users} onLogin={onLogin} logLoginEvent={pushLogin} onCreateFirstAdmin={createFirstAdmin} onSignup={signup} pushSecurity={pushSecurity} notice={expiredNotice} />;
+    return <Login users={users} onLogin={onLogin} logLoginEvent={pushLogin} onSignup={signup} pushSecurity={pushSecurity} notice={expiredNotice} />;
   }
 
   const banner = ROLE_BANNER[user.role];

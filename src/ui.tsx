@@ -1,54 +1,62 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { uid } from "./lib";
 import { useT } from "./i18n";
-import { IcAlert, IcCheck, IcX } from "./icons";
+import { IcX } from "./icons";
 
 /* ------------------------------------------------------------------ */
-/* Toasts                                                              */
+/* Notifications — silent feed (rendered in the hamburger menu)        */
 /* ------------------------------------------------------------------ */
 export type ToastKind = "success" | "info" | "warning" | "error";
-interface Toast {
+
+export interface FeedItem {
   id: string;
+  ts: string;
   kind: ToastKind;
   title: string;
   body?: string;
+  read: boolean;
 }
 
-const ToastCtx = createContext<(kind: ToastKind, title: string, body?: string) => void>(() => {});
-export const useToast = () => useContext(ToastCtx);
+interface ToastApi {
+  push: (kind: ToastKind, title: string, body?: string) => void;
+}
+interface FeedApi {
+  feed: FeedItem[];
+  unread: number;
+  lastId: string | null;
+  markAll: () => void;
+  markOne: (id: string) => void;
+}
+
+const ToastCtx = createContext<ToastApi>({ push: () => {} });
+const FeedCtx = createContext<FeedApi>({ feed: [], unread: 0, lastId: null, markAll: () => {}, markOne: () => {} });
+
+export const useToast = () => useContext(ToastCtx).push;
+export const useFeed = () => useContext(FeedCtx);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [feed, setFeed] = useState<FeedItem[]>([]);
+
+  /* every notification is captured quietly — nothing pops on screen */
   const push = useCallback((kind: ToastKind, title: string, body?: string) => {
-    const id = uid("T");
-    setToasts((t) => [...t.slice(-3), { id, kind, title, body }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4600);
+    const item: FeedItem = { id: uid("F"), ts: new Date().toISOString(), kind, title, body, read: false };
+    setFeed((f) => [item, ...f].slice(0, 40));
   }, []);
+
+  const api = useMemo<FeedApi>(
+    () => ({
+      feed,
+      unread: feed.filter((x) => !x.read).length,
+      lastId: feed[0]?.id ?? null,
+      markAll: () => setFeed((f) => f.map((x) => (x.read ? x : { ...x, read: true }))),
+      markOne: (id: string) => setFeed((f) => f.map((x) => (x.id === id && !x.read ? { ...x, read: true } : x))),
+    }),
+    [feed]
+  );
+
   return (
-    <ToastCtx.Provider value={push}>
-      {children}
-      <div className="fixed bottom-6 right-4 z-[90] flex flex-col gap-2 w-[360px] max-w-[calc(100vw-2rem)]">
-        {toasts.map((t) => (
-          <div
-            key={t.id}
-            role="status"
-            className={`toast-in border-l-4 bg-navy text-paper shadow-lg shadow-navy/30 px-4 py-3 flex gap-3 items-start ${
-              t.kind === "success" ? "border-green2" : t.kind === "error" ? "border-crimson" : t.kind === "warning" ? "border-amber2" : "border-steel"
-            }`}
-          >
-            <span className={`mt-0.5 ${t.kind === "success" ? "text-green2" : t.kind === "error" ? "text-[#e5726a]" : t.kind === "warning" ? "text-amber2" : "text-[#8fb0cd]"}`}>
-              {t.kind === "error" || t.kind === "warning" ? <IcAlert c="w-4 h-4" /> : <IcCheck c="w-4 h-4" />}
-            </span>
-            <div className="min-w-0">
-              <p className="text-[13.5px] font-semibold leading-snug">{t.title}</p>
-              {t.body && <p className="text-[12.5px] text-paper/70 leading-snug mt-0.5">{t.body}</p>}
-            </div>
-            <button onClick={() => setToasts((x) => x.filter((y) => y.id !== t.id))} className="ml-auto text-paper/50 hover:text-paper transition-colors" aria-label="Dismiss">
-              <IcX c="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ))}
-      </div>
+    <ToastCtx.Provider value={{ push }}>
+      <FeedCtx.Provider value={api}>{children}</FeedCtx.Provider>
     </ToastCtx.Provider>
   );
 }

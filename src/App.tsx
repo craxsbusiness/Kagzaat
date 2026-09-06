@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChainLink } from "./lib";
-import { fmtClock, makeLink, uid, useLocalState, useNow, verifyChain, versionHash } from "./lib";
+import { fmtClock, makeLink, timeAgo, uid, useLocalState, useNow, verifyChain, versionHash } from "./lib";
 import type { CaseFile, Court, EvidenceItem, LegalDoc, LoginEvent, Notice, RoleId, SecurityEvent, TransferRec, User } from "./data";
 import {
   COURTS as COURTS_SEED, ROLE_BANNER, ROLE_LABEL, SEED_AUDIT, SEED_CASES, SEED_DOCUMENTS, SEED_EVIDENCE,
   SEED_LOGINS, SEED_NOTICES, SEED_SECURITY, USERS, canDownload, canSeeCase, canSeeDoc, canUpload, keyFingerprint,
 } from "./data";
 import { hashPassword } from "./lib";
-import { Btn, Chip, ToastProvider, useToast } from "./ui";
+import { Btn, Chip, ToastProvider, useFeed, useToast } from "./ui";
 import { PrefsProvider, usePrefs, useT } from "./i18n";
 import {
-  IcBell, IcChain, IcCheck, IcCheckSeal, IcClock, IcCourt, IcFolder, IcKey, IcLang, IcLogout,
+  IcChain, IcCheck, IcCheckSeal, IcClock, IcCourt, IcFolder, IcKey, IcLang, IcLogout,
   IcMenu, IcMoon, IcPulse, IcSearch, IcShield, IcSun, IcTextSize, IcX,
 } from "./icons";
 import Login from "./views/Login";
@@ -58,7 +58,20 @@ function Portal() {
   const [selCase, setSelCase] = useState<string | null>(null);
   const [selTab, setSelTab] = useState("documents");
   const [forbidden, setForbidden] = useState<string | null>(null);
-  const [bellOpen, setBellOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const feed = useFeed();
+  const [flash, setFlash] = useState(false);
+  const seenFeedId = useRef<string | null>(null);
+
+  /* quiet perceptible feedback — the menu button pulses when something lands in the feed */
+  useEffect(() => {
+    if (feed.lastId && feed.lastId !== seenFeedId.current) {
+      seenFeedId.current = feed.lastId;
+      setFlash(true);
+      const id = setTimeout(() => setFlash(false), 1900);
+      return () => clearTimeout(id);
+    }
+  }, [feed.lastId]);
   const [sideOpen, setSideOpen] = useState(false);
   const [expiredNotice, setExpiredNotice] = useState<string | null>(null);
 
@@ -610,7 +623,139 @@ function Portal() {
         {/* main column */}
         <div className="flex-1 min-w-0 flex flex-col">
           <header className="sticky top-[24px] lg:top-0 z-30 bg-paper/95 backdrop-blur-sm border-b border-line px-4 lg:px-6 py-2.5 flex flex-wrap items-center gap-2.5">
-            <button className="lg:hidden text-navy" onClick={() => setSideOpen(true)} aria-label="Open menu"><IcMenu c="w-5 h-5" /></button>
+            {/* hamburger — quick navigation + notifications (top-left) */}
+            <div className="relative">
+              <button
+                onClick={() => setMenuOpen((o) => !o)}
+                aria-expanded={menuOpen}
+                aria-label={t("hdr.notifications")}
+                title={t("hdr.notifications")}
+                className={`relative w-10 h-10 border flex items-center justify-center transition-colors ${
+                  menuOpen ? "border-crimson bg-crimson/10 text-crimson" : "border-line bg-card text-ink2 hover:text-ink hover:border-navy"
+                } ${flash ? "notif-flash" : ""}`}
+              >
+                <IcMenu c="w-5 h-5" />
+                {unread + feed.unread > 0 && (
+                  <span
+                    key={unread + feed.unread}
+                    className="stamp-in absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-crimson text-paper font-mono text-[9.5px] font-bold flex items-center justify-center"
+                  >
+                    {unread + feed.unread}
+                  </span>
+                )}
+              </button>
+
+              {menuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                  <div className="modal-in absolute left-0 top-full mt-2 w-[380px] max-w-[92vw] max-h-[74vh] overflow-y-auto bg-paper border border-line shadow-xl shadow-navy/25 z-50">
+                    <div className="sticky top-0 z-10 px-3.5 py-2.5 border-b border-line bg-navy text-paper flex items-center justify-between">
+                      <p className="font-display font-semibold uppercase tracking-[0.14em] text-[12.5px]">{t("hdr.notifications")}</p>
+                      <button
+                        onClick={() => {
+                          feed.markAll();
+                          setNotices((prev) => prev.map((n) => (n.forUserId === user.id ? { ...n, read: true } : n)));
+                        }}
+                        className="font-mono text-[9px] uppercase tracking-widest text-paper/60 hover:text-paper transition-colors"
+                      >
+                        {t("hdr.markRead")}
+                      </button>
+                    </div>
+
+                    {/* quick navigation */}
+                    <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink3 px-3.5 pt-2.5 pb-1.5">{t("hdr.quickNav")}</p>
+                    <nav className="px-2 pb-2 grid grid-cols-2 gap-1">
+                      {NAV.map((n) => (
+                        <button
+                          key={n.key}
+                          onClick={() => {
+                            setNav(n.key);
+                            setMenuOpen(false);
+                            if (n.key !== "cases") { setSelCase(null); setForbidden(null); }
+                          }}
+                          className={`flex items-center gap-2 px-2.5 py-2 text-left transition-colors border ${
+                            nav === n.key ? "border-crimson/60 bg-crimson/[0.06] text-crimson" : "border-transparent text-ink2 hover:border-line hover:bg-paper2"
+                          }`}
+                        >
+                          {n.icon}
+                          <span className="font-display text-[11.5px] uppercase tracking-[0.1em]">{n.label}</span>
+                        </button>
+                      ))}
+                    </nav>
+
+                    {/* live activity — everything that used to pop bottom-right */}
+                    <div className="px-3.5 pt-1.5 pb-1.5 border-t border-line/70 flex items-center justify-between">
+                      <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink3">{t("hdr.activity")}</p>
+                      {feed.unread > 0 && <span className="font-mono text-[9px] text-crimson font-bold">{feed.unread} new</span>}
+                    </div>
+                    {feed.feed.length === 0 ? (
+                      <p className="px-3.5 pb-4 text-[12px] text-ink3 leading-relaxed">{t("hdr.emptyFeed")}</p>
+                    ) : (
+                      <ul className="divide-y divide-line/70 border-t border-line/70">
+                        {feed.feed.map((f) => (
+                          <li key={f.id}>
+                            <button
+                              onClick={() => feed.markOne(f.id)}
+                              className={`w-full text-left px-3.5 py-2.5 flex gap-2.5 transition-colors hover:bg-paper2/70 ${f.read ? "opacity-60" : ""}`}
+                            >
+                              <span className={`w-[3px] self-stretch shrink-0 ${f.kind === "success" ? "bg-green2" : f.kind === "error" ? "bg-crimson" : f.kind === "warning" ? "bg-amber2" : "bg-steel"}`} />
+                              <span className="min-w-0 flex-1">
+                                <span className="flex items-center gap-2">
+                                  <span className="text-[12.5px] font-semibold text-ink leading-tight">{f.title}</span>
+                                  {!f.read && <span className="w-1.5 h-1.5 rounded-full bg-crimson pulse-red shrink-0" />}
+                                  <span className="ml-auto font-mono text-[9px] text-ink3 whitespace-nowrap">{timeAgo(f.ts)}</span>
+                                </span>
+                                {f.body && <span className="block text-[11.5px] text-ink2 leading-snug mt-0.5">{f.body}</span>}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {/* registry notices (cases, hearings, transfers…) */}
+                    <div className="px-3.5 pt-2 pb-1.5 border-t border-line/70 flex items-center justify-between">
+                      <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink3">{t("hdr.notices")}</p>
+                      {unread > 0 && <span className="font-mono text-[9px] text-crimson font-bold">{unread} new</span>}
+                    </div>
+                    <ul className="divide-y divide-line/70 border-t border-line/70">
+                      {myNotices.slice(0, 12).map((n) => (
+                        <li key={n.id} className={`px-3.5 py-2.5 ${n.read ? "opacity-60" : ""}`}>
+                          <div className="flex items-center gap-2">
+                            <Chip tone={n.kind === "SECURITY" ? "red" : n.kind === "TRANSFER" ? "plum" : n.kind === "HEARING" ? "azure" : "navy"}>{n.kind}</Chip>
+                            {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-crimson pulse-red" />}
+                            <span className="ml-auto font-mono text-[9px] text-ink3">{new Date(n.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                          </div>
+                          <p className="text-[12.5px] text-ink leading-snug mt-1">{n.text}</p>
+                          {n.caseId && (
+                            <button
+                              onClick={() => { setMenuOpen(false); attemptOpen(n.caseId!); }}
+                              className="font-mono text-[9.5px] uppercase tracking-widest text-steel hover:text-crimson transition-colors mt-1"
+                            >
+                              {t("act.open")} {n.caseId}
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                      {myNotices.length === 0 && (
+                        <li className="px-3.5 py-4 text-center font-mono text-[10px] uppercase tracking-widest text-ink3">{t("hdr.noNotices")}</li>
+                      )}
+                    </ul>
+
+                    {/* session & sign-out — keeps the menu self-contained on small screens */}
+                    <div className="sticky bottom-0 border-t border-line bg-paper2/95 px-3.5 py-2.5 flex items-center gap-2.5 lg:hidden">
+                      <span className={`w-1.5 h-1.5 rounded-full ${lowToken ? "bg-amber2 pulse-red" : "bg-green2 pulse-dot"}`} />
+                      <span className={`font-mono text-[11px] tabular-nums ${lowToken ? "text-amber" : "text-ink2"}`}>
+                        {t("hdr.session")} · {mm}:{ss}
+                      </span>
+                      <button onClick={logout} className="ml-auto inline-flex items-center gap-1.5 font-display text-[11px] uppercase tracking-[0.12em] text-crimson hover:underline underline-offset-2">
+                        <IcLogout c="w-3.5 h-3.5" /> {t("hdr.logout")}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
 
             <span className="hidden md:inline font-mono text-[12px] text-ink2 tabular-nums mr-1">{fmtClock(now.toISOString())}</span>
             <span className="hidden xl:inline font-mono text-[10px] uppercase tracking-widest text-ink3 border border-line px-2 py-1.5">chain · {audit.length}</span>
@@ -668,45 +813,6 @@ function Portal() {
                   {prefs.theme === "light" ? <IcMoon c="w-4.5 h-4.5" /> : <IcSun c="w-4.5 h-4.5" />}
                 </span>
               </button>
-
-              {/* notifications */}
-              <div className="relative">
-                <button onClick={() => setBellOpen((o) => !o)} className="relative w-10 h-10 border border-line bg-card text-ink2 hover:text-ink hover:border-navy transition-colors flex items-center justify-center" aria-label={t("hdr.notifications")}>
-                  <IcBell c="w-4.5 h-4.5" />
-                  {unread > 0 && <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 bg-crimson text-paper font-mono text-[9.5px] font-bold flex items-center justify-center">{unread}</span>}
-                </button>
-                {bellOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setBellOpen(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-[360px] max-w-[90vw] bg-paper border border-line shadow-xl shadow-navy/25 z-50 modal-in">
-                      <div className="px-3.5 py-2.5 border-b border-line flex items-center justify-between">
-                        <p className="font-display font-semibold uppercase tracking-[0.14em] text-[12.5px] text-ink">{t("hdr.notifications")}</p>
-                        <button onClick={() => setNotices((prev) => prev.map((n) => (n.forUserId === user.id ? { ...n, read: true } : n)))} className="font-mono text-[9px] uppercase tracking-widest text-steel hover:text-crimson transition-colors">
-                          {t("hdr.markRead")}
-                        </button>
-                      </div>
-                      <ul className="max-h-[380px] overflow-y-auto divide-y divide-line/70">
-                        {myNotices.slice(0, 20).map((n) => (
-                          <li key={n.id} className={`px-3.5 py-2.5 ${n.read ? "opacity-60" : ""}`}>
-                            <div className="flex items-center gap-2">
-                              <Chip tone={n.kind === "SECURITY" ? "red" : n.kind === "TRANSFER" ? "plum" : n.kind === "HEARING" ? "azure" : "navy"}>{n.kind}</Chip>
-                              {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-crimson pulse-red" />}
-                              <span className="ml-auto font-mono text-[9px] text-ink3">{new Date(n.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                            </div>
-                            <p className="text-[12.5px] text-ink leading-snug mt-1">{n.text}</p>
-                            {n.caseId && (
-                              <button onClick={() => { setBellOpen(false); attemptOpen(n.caseId!); }} className="font-mono text-[9.5px] uppercase tracking-widest text-steel hover:text-crimson transition-colors mt-1">
-                                {t("act.open")} {n.caseId}
-                              </button>
-                            )}
-                          </li>
-                        ))}
-                        {myNotices.length === 0 && <li className="px-3.5 py-8 text-center font-mono text-[10px] uppercase tracking-widest text-ink3">{t("hdr.noNotices")}</li>}
-                      </ul>
-                    </div>
-                  </>
-                )}
-              </div>
 
               <div className="flex items-center gap-2.5 border border-line bg-card pl-2.5 pr-3 py-1.5">
                 <span className="w-6 h-6 bg-navy text-paper flex items-center justify-center"><IcKey c="w-3.5 h-3.5" /></span>

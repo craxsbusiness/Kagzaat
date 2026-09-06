@@ -8,10 +8,12 @@ import { IcCheck, IcChevD, IcFinger, IcKey, IcLock, IcShield, IcUser, IcX } from
 
 interface Props {
   users: User[];
+  initialMode?: "signin" | "signup";
   onLogin: (userId: string, device: string, ip: string) => void;
   logLoginEvent: (ev: Omit<LoginEvent, "id" | "ts">) => void;
   onSignup: (p: { name: string; role: RoleId; email: string; password: string; courtIds: string[]; stationId: string }) => boolean;
   pushSecurity?: (severity: "INFO" | "WARN" | "CRITICAL", kind: string, detail: string, userId?: string) => void;
+  onBackToLanding?: () => void;
   notice?: string | null;
 }
 
@@ -32,40 +34,6 @@ const label = "font-mono text-[9.5px] uppercase tracking-[0.18em] text-paper/55 
 
 export default function Login(p: Props) {
   return <Gateway {...p} />;
-}
-
-/* ================================================================== */
-/* Factor stepper — 1 password · 2 one-time code · 3 fingerprint       */
-/* ================================================================== */
-function FactorSteps({ step }: { step: 1 | 2 | 3 }) {
-  const t = useT();
-  const factors: { key: string; icon: React.ReactNode }[] = [
-    { key: "login.f1", icon: <IcKey c="w-3.5 h-3.5" /> },
-    { key: "login.f2", icon: <IcLock c="w-3.5 h-3.5" /> },
-    { key: "login.f3", icon: <IcFinger c="w-3.5 h-3.5" /> },
-  ];
-  return (
-    <div className="flex items-center px-6 pt-5">
-      {factors.map((f, i) => {
-        const n = (i + 1) as 1 | 2 | 3;
-        const done = n < step;
-        const active = n === step;
-        return (
-          <div key={f.key} className="flex items-center flex-1 last:flex-none">
-            <div className={`flex items-center gap-2 transition-colors ${active ? "text-[#e5a09a]" : done ? "text-green2" : "text-paper/35"}`}>
-              <span className={`w-7 h-7 border flex items-center justify-center transition-all ${active ? "border-[#e5a09a] bg-crimson/20 pulse-red" : done ? "border-green2/60 bg-green/15" : "border-navyline"}`}>
-                {done ? <IcCheck c="w-3.5 h-3.5" /> : f.icon}
-              </span>
-              <span className="font-mono text-[9px] uppercase tracking-[0.12em] whitespace-nowrap">
-                {n} · {t(f.key)}
-              </span>
-            </div>
-            {i < factors.length - 1 && <span className={`flex-1 h-px mx-2 transition-colors ${done ? "bg-green2/50" : "bg-navyline"}`} />}
-          </div>
-        );
-      })}
-    </div>
-  );
 }
 
 /* ================================================================== */
@@ -201,7 +169,7 @@ function BiometricStep({ userName, onMatch }: { userName: string; onMatch: (scor
         </p>
         {released && phase === "idle" && <p className="text-[12px] text-[#e5a09a] mt-2 fade-in">{t("login.bioCancel")}</p>}
         <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-paper/35 mt-4 text-center">
-          Template matched on-device · raw print never leaves the sensor
+          Verification is completed on your device
         </p>
       </div>
     </>
@@ -213,10 +181,11 @@ function BiometricStep({ userName, onMatch }: { userName: string; onMatch: (scor
 /* ================================================================== */
 function Gateway(p: Props) {
   const t = useT();
+  const { lang } = usePrefs();
   const toast = useToast();
   const empty = p.users.length === 0;
 
-  const [mode, setMode] = useState<"signin" | "signup">(empty ? "signup" : "signin");
+  const [mode, setMode] = useState<"signin" | "signup">(p.initialMode ?? (empty ? "signup" : "signin"));
   const [step, setStep] = useState<"creds" | "mfa" | "bio">("creds");
   const [pending, setPending] = useState<User | null>(null);
 
@@ -236,7 +205,6 @@ function Gateway(p: Props) {
   const device = useMemo(() => deviceInfo(), []);
   const ip = useMemo(() => `10.14.2.${Math.floor(20 + Math.random() * 60)}`, []);
 
-  const stepN: 1 | 2 | 3 = step === "creds" ? 1 : step === "mfa" ? 2 : 3;
   const filteredPrincipals = useMemo(
     () => p.users.filter((u) => (roleFilter === "ALL" ? true : u.role === roleFilter)),
     [p.users, roleFilter]
@@ -295,7 +263,7 @@ function Gateway(p: Props) {
     setErr(null);
     setPending(u);
     setStep("mfa");
-    toast("info", "Factor 1 passed — one-time code issued", "6-digit code dispatched (demo code shown below).");
+    toast("info", "Credentials accepted", "Verification is continuing on the secure channel.");
   };
 
   /* ---------------- factor 2 · one-time code ---------------- */
@@ -311,7 +279,7 @@ function Gateway(p: Props) {
     setErr(null);
     setMfaInput("");
     setStep("bio");
-    toast("info", "Factor 2 passed — fingerprint required", "One more factor before entry.");
+    toast("info", "Code accepted", "One more verification remains before entry.");
   };
 
   /* ---------------- factor 3 · fingerprint ---------------- */
@@ -344,21 +312,19 @@ function Gateway(p: Props) {
           <p className="text-[14px] text-paper/65 leading-relaxed mt-5 max-w-md">{t("login.lede")}</p>
         </div>
 
-        {/* the three factors, visualised */}
+        {/* courtroom mark — the bench */}
         <div className="mt-9 relative z-10 max-w-md">
-          {[
-            { n: 1, k: "login.f1", v: "login.k1v", icon: <IcKey c="w-4 h-4" /> },
-            { n: 2, k: "login.f2", v: "login.k3v", icon: <IcLock c="w-4 h-4" /> },
-            { n: 3, k: "login.f3", v: "login.f3v", icon: <IcFinger c="w-4 h-4" /> },
-          ].map((f, i) => (
-            <div key={f.n} className="rise flex items-center gap-3 border border-navyline bg-navy2/40 px-4 py-2.5 mb-2" style={{ animationDelay: `${i * 110}ms` }}>
-              <span className="w-8 h-8 border border-[#e5a09a]/50 text-[#e5a09a] flex items-center justify-center shrink-0">{f.icon}</span>
-              <div>
-                <p className="font-display font-semibold uppercase tracking-[0.14em] text-[12px]">{f.n} · {t(f.k)}</p>
-                <p className="font-mono text-[9.5px] text-paper/50 mt-0.5">{t(f.v)}</p>
-              </div>
-            </div>
-          ))}
+          <svg viewBox="0 0 220 120" className="w-44 h-auto text-paper/70 scale-sway" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
+            <path d="M110 18 V86" />
+            <path d="M80 86 H140 M90 94 H130" strokeWidth="3.2" />
+            <circle cx="110" cy="12" r="5" className="text-[#e5b768]" />
+            <path d="M38 34 H182" strokeWidth="3" />
+            <path d="M38 34 L26 64 M38 34 L50 64 M20 64 A18 8 0 0 0 56 64 Z" strokeWidth="2" className="text-[#e5b768]" />
+            <path d="M182 34 L170 64 M182 34 L194 64 M164 64 A18 8 0 0 0 200 64 Z" strokeWidth="2" className="text-[#e5b768]" />
+          </svg>
+          <p className="font-display italic text-[15px] text-paper/60 mt-4 max-w-sm leading-snug">
+            {lang === "hi" ? "“न्याय तभी होता है जब वह अभिलेख पर हो।”" : "“Justice is not done until it is on record.”"}
+          </p>
         </div>
 
         <div className="mt-auto relative z-10 grid grid-cols-2 gap-3 max-w-md">
@@ -429,14 +395,10 @@ function Gateway(p: Props) {
               />
             ) : (
               <>
-                <FactorSteps step={stepN} />
-
                 {step === "creds" && (
                   <>
                     <header className="px-7 pt-4 pb-3">
-                      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e5a09a]">
-                        {t("login.stepN")} 1 {t("login.ofN")} 3 · {t("login.f1")}
-                      </p>
+                      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e5a09a]">{t("login.step")}</p>
                       <h2 className="font-display font-semibold uppercase tracking-wide text-[22px] mt-1">{t("login.title")}</h2>
                     </header>
                     <form className="px-7 pb-4 space-y-4" onSubmit={(e) => { e.preventDefault(); submitCreds(); }}>
@@ -521,9 +483,7 @@ function Gateway(p: Props) {
                 {step === "mfa" && (
                   <>
                     <header className="px-7 pt-4 pb-3">
-                      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e5a09a]">
-                        {t("login.stepN")} 2 {t("login.ofN")} 3 · {t("login.f2")}
-                      </p>
+                      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e5a09a]">{t("login.step")}</p>
                       <h2 className="font-display font-semibold uppercase tracking-wide text-[22px] mt-1">{t("login.mfaTitle")}</h2>
                       <p className="text-[12.5px] text-paper/55 mt-1.5">{t("login.mfaSub")}</p>
                     </header>
@@ -559,6 +519,15 @@ function Gateway(p: Props) {
               </>
             )}
           </div>
+
+          {p.onBackToLanding && (
+            <button
+              onClick={p.onBackToLanding}
+              className="mt-4 mx-auto flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-paper/45 hover:text-paper transition-colors"
+            >
+              ← {lang === "hi" ? "मुख्य पृष्ठ पर लौटें" : "Back to landing page"}
+            </button>
+          )}
         </div>
       </div>
     </div>

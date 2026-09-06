@@ -19,6 +19,8 @@ import CasesView from "./views/Cases";
 import AuditTrail from "./views/AuditTrail";
 import AdminPanel from "./views/AdminPanel";
 import SearchView from "./views/SearchView";
+import Landing from "./components/Landing";
+import AccessCluster from "./components/AccessCluster";
 
 type Nav = "console" | "cases" | "search" | "audit" | "admin";
 
@@ -59,6 +61,7 @@ function Portal() {
   const [selTab, setSelTab] = useState("documents");
   const [forbidden, setForbidden] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [gateMode, setGateMode] = useState<"landing" | "signin" | "signup">("landing");
   const feed = useFeed();
   const [flash, setFlash] = useState(false);
   const seenFeedId = useRef<string | null>(null);
@@ -532,7 +535,26 @@ function Portal() {
 
   /* ---------------- render ---------------- */
   if (!session || !user) {
-    return <Login users={users} onLogin={onLogin} logLoginEvent={pushLogin} onSignup={signup} pushSecurity={pushSecurity} notice={expiredNotice} />;
+    if (gateMode === "landing") {
+      return (
+        <Landing
+          stats={{ courts: courts.length, cases: cases.length, ledger: audit.length, users: users.length }}
+          onEnter={(m) => setGateMode(m)}
+        />
+      );
+    }
+    return (
+      <Login
+        users={users}
+        initialMode={gateMode === "signup" ? "signup" : "signin"}
+        onLogin={onLogin}
+        logLoginEvent={pushLogin}
+        onSignup={signup}
+        pushSecurity={pushSecurity}
+        notice={expiredNotice}
+        onBackToLanding={() => setGateMode("landing")}
+      />
+    );
   }
 
   const banner = ROLE_BANNER[user.role];

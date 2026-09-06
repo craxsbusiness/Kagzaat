@@ -6,7 +6,7 @@ import {
   COURTS as COURTS_SEED, ROLE_BANNER, ROLE_LABEL, SEED_AUDIT, SEED_CASES, SEED_DOCUMENTS, SEED_EVIDENCE,
   SEED_LOGINS, SEED_NOTICES, SEED_SECURITY, USERS, canDownload, canSeeCase, canSeeDoc, canUpload, keyFingerprint,
 } from "./data";
-import { hashPassword } from "./lib";
+import { hashPassword, hashSecret } from "./lib";
 import { Btn, Chip, ToastProvider, useToast } from "./ui";
 import { PrefsProvider, usePrefs, useT } from "./i18n";
 import {
@@ -421,10 +421,40 @@ function Portal() {
         pp.role === "POLICE" ? "Assigned investigations only" : pp.role === "ACCUSED" || pp.role === "VICTIM" ? "Own cases · permitted docs only" :
         pp.role === "ADMIN" ? "System administration" : "Read-only audit & security",
       passHash: hashPassword(pp.password),
+      secQuestion: pp.secQuestion,
+      secAnswerHash: hashSecret(pp.secAnswer),
     };
     setUsers((prev) => [...prev, nu]);
-    log("USER_CREATED", { detail: `${pp.name} provisioned as ${ROLE_LABEL[pp.role]} (${nu.id}) · MFA enforced` });
+    log("USER_CREATED", { detail: `${pp.name} provisioned as ${ROLE_LABEL[pp.role]} (${nu.id}) · 3-factor sign-in enforced` });
     toast("success", "Principal provisioned", `${nu.id} · share the initial password in person.`);
+  };
+
+  /* ---------------- public self-signup (parties & citizens) ---------------- */
+  const signup: (sp: { name: string; role: "VICTIM" | "ACCUSED"; email: string; password: string; secQuestion: string; secAnswer: string }) => boolean = (sp) => {
+    const exists = users.some((x) => x.email.toLowerCase() === sp.email.toLowerCase());
+    if (exists) {
+      log("USER_CREATED", { detail: `Signup rejected — email already registered (${sp.email})`, actor: sp.name, role: ROLE_LABEL[sp.role] });
+      return false;
+    }
+    const nu: User = {
+      id: uid("USR"),
+      name: sp.name,
+      role: sp.role,
+      unit: ROLE_LABEL[sp.role],
+      courtIds: [],
+      email: sp.email,
+      keyFp: keyFingerprint(),
+      status: "ACTIVE",
+      clearanceNote: "Own cases · permitted docs only",
+      passHash: hashPassword(sp.password),
+      secQuestion: sp.secQuestion,
+      secAnswerHash: hashSecret(sp.secAnswer),
+    };
+    setUsers((prev) => [...prev, nu]);
+    log("USER_CREATED", { detail: `${sp.name} self-registered as ${ROLE_LABEL[sp.role]} (${nu.id}) · 3-factor sign-in enforced`, actor: sp.name, role: ROLE_LABEL[sp.role] });
+    notify(nu.id, "SYSTEM", `Welcome ${sp.name}. Your account is ready — case files appear once the registry links you as a party.`);
+    toast("success", "Account created", `${nu.id} · now sign in with your password.`);
+    return true;
   };
 
   const addCourt = (pp: { name: string; level: string; location: string }) => {
@@ -478,7 +508,7 @@ function Portal() {
 
   /* ---------------- render ---------------- */
   if (!session || !user) {
-    return <Login users={users} onLogin={onLogin} logLoginEvent={pushLogin} onCreateFirstAdmin={createFirstAdmin} notice={expiredNotice} />;
+    return <Login users={users} onLogin={onLogin} logLoginEvent={pushLogin} onCreateFirstAdmin={createFirstAdmin} onSignup={signup} pushSecurity={pushSecurity} notice={expiredNotice} />;
   }
 
   const banner = ROLE_BANNER[user.role];

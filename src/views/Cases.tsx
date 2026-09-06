@@ -655,7 +655,7 @@ function UploadModal({ p, c, onClose }: { p: CasesProps; c: CaseFile; onClose: (
           <textarea className={`${inputCls} min-h-[180px] font-mono text-[12.5px] leading-relaxed`} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Full text of the record…" />
         </div>
         <label className="flex items-center gap-2 text-[12.5px] text-ink2 cursor-pointer">
-          <input type="checkbox" checked={review} onChange={(e) => setReview(e.target.checked)} className="w-4 h-4 accent-[#14263e]" />
+          <input type="checkbox" checked={review} onChange={(e) => setReview(e.target.checked)} className="w-4 h-4 accent-navy" />
           Submit for judicial approval (status → REVIEW)
         </label>
         <div className="flex justify-end gap-2">
@@ -938,11 +938,11 @@ function CloseDismissModal({ p, c, kind, onClose }: { p: CasesProps; c: CaseFile
           <input className={inputCls} value={orderRef} onChange={(e) => setOrderRef(e.target.value)} placeholder="ORD-2026-…" />
         </div>
         <label className="flex items-center gap-2 text-[12.5px] text-ink2 cursor-pointer">
-          <input type="checkbox" checked={signed} onChange={(e) => setSigned(e.target.checked)} className="w-4 h-4 accent-[#14263e]" />
+          <input type="checkbox" checked={signed} onChange={(e) => setSigned(e.target.checked)} className="w-4 h-4 accent-navy" />
           <span className="inline-flex items-center gap-1.5"><IcSign c="w-3.5 h-3.5 text-navy" /> Affix digital signature (RSA-4096 · e-Sign DSS)</span>
         </label>
         <label className="flex items-start gap-2 text-[12.5px] text-ink2 cursor-pointer border border-line bg-paper2/60 px-3 py-2.5">
-          <input type="checkbox" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} className="w-4 h-4 mt-0.5 accent-[#b3271e]" />
+          <input type="checkbox" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} className="w-4 h-4 mt-0.5 accent-crimson" />
           I confirm this action is legally warranted and understand the case becomes read-only; documents and history are preserved permanently.
         </label>
         <div className="flex justify-end gap-2">

@@ -132,7 +132,7 @@ export default function SearchView(p: Props) {
               {COURTS.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <label className="flex items-center gap-2 text-[12.5px] text-ink2 cursor-pointer ml-auto">
-              <input type="checkbox" checked={ocr} onChange={(e) => setOcr(e.target.checked)} className="accent-[#14263e] w-4 h-4" />
+              <input type="checkbox" checked={ocr} onChange={(e) => setOcr(e.target.checked)} className="accent-navy w-4 h-4" />
               <span className="inline-flex items-center gap-1.5"><IcScan c="w-3.5 h-3.5 text-navy" /> {t("search.ocr")}</span>
             </label>
           </div>

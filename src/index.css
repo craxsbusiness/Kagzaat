@@ -104,6 +104,19 @@
 [data-theme="dark"] .text-rust { color: #d29a70 !important; }
 [data-theme="dark"] .border-navy { border-color: rgba(207, 224, 242, 0.45) !important; }
 
+/* …and every Tailwind variant of the navy accent (hover, group-hover,
+   focus, opacity modifiers, form accents) so nothing stays dark-on-dark */
+[data-theme="dark"] .hover\:text-navy:hover,
+[data-theme="dark"] .group:hover .group-hover\:text-navy { color: #cfe0f2 !important; }
+[data-theme="dark"] .hover\:border-navy:hover,
+[data-theme="dark"] .hover\:border-navy\/50:hover,
+[data-theme="dark"] .focus\:border-navy:focus { border-color: rgba(207, 224, 242, 0.5) !important; }
+[data-theme="dark"] .text-navy\/50 { color: rgba(207, 224, 242, 0.6) !important; }
+[data-theme="dark"] .text-navy\/60 { color: rgba(207, 224, 242, 0.7) !important; }
+[data-theme="dark"] .border-navy\/30 { border-color: rgba(207, 224, 242, 0.3) !important; }
+[data-theme="dark"] .accent-navy { accent-color: #cfe0f2 !important; }
+[data-theme="dark"] .accent-crimson { accent-color: #d0503f !important; }
+
 /* native dropdown options must stay legible in every theme */
 select option,
 select optgroup {

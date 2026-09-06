@@ -110,7 +110,7 @@ const en: Record<string, string> = {
   "firstrun.email": "Official email",
   "firstrun.pw": "Password · min 8 chars",
   "firstrun.pw2": "Confirm password",
-  "firstrun.argon": "Stored as an Argon2id digest · MFA enforced at every sign-in",
+  "firstrun.argon": "Credentials are stored as salted digests only · sessions are short-lived",
   "firstrun.submit": "Provision registry & open gateway",
   "firstrun.after": "After provisioning, sign in with these credentials — the founding account can never be deleted",
   "firstrun.secQ": "Security question (factor 3)",
@@ -119,7 +119,7 @@ const en: Record<string, string> = {
   /* 3-factor gateway */
   "login.tab.signin": "Sign in",
   "login.tab.signup": "Create account",
-  "login.3fa": "3-factor authentication",
+  "login.3fa": "Secure gateway",
   "login.f1": "Password",
   "login.f2": "One-time code",
   "login.f3": "Fingerprint",
@@ -164,7 +164,33 @@ const en: Record<string, string> = {
   "signup.submit": "Create account",
   "signup.dupe": "This email is already registered — please use Sign in.",
   "signup.ok": "Account created — sign in with your password",
-  "signup.3faNote": "Every sign-in checks 3 factors: password → one-time code → security answer",
+  "signup.3faNote": "Sign-in is protected by layered, on-device verification.",
+
+  /* landing page */
+  "land.kicker": "LexVault · court of record",
+  "land.h1": "Where every record stands —",
+  "land.h1b": "and every record answers.",
+  "land.sub": "A secure registry for the life of a case: from the first information report to the final order. Role-based dockets, per-version digests, and an audit chain that never forgets.",
+  "land.enter": "Enter the portal",
+  "land.create": "Create an account",
+  "land.trust": "IT Act 2000 · Evidence Act s.65B · append-only ledger",
+  "land.services": "What the registry keeps",
+  "land.servicesSub": "Six kinds of record, one unbroken chain of custody.",
+  "land.svc1t": "Case files", "land.svc1d": "Immutable numbers, parties on record, hearings, orders and transfers.",
+  "land.svc2t": "Documents & versions", "land.svc2d": "Every edit becomes a new version — sealed by SHA-256, never overwritten.",
+  "land.svc3t": "Evidence custody", "land.svc3d": "From seizure to laboratory to malkhana, every hand that touched it is recorded.",
+  "land.svc4t": "Hearings & orders", "land.svc4d": "Dates on the board, orders signed digitally and locked against silent change.",
+  "land.svc5t": "Court-to-court transfer", "land.svc5d": "Ownership moves between benches; the history, files and ledger stay intact.",
+  "land.svc6t": "Tamper-evident audit", "land.svc6d": "A hash-chained ledger, verified link by link, that even administrators cannot erase.",
+  "land.how": "How a case moves through the registry",
+  "land.hw1t": "Provision", "land.hw1d": "A founding registrar opens the registry and registers courts.",
+  "land.hw2t": "Record", "land.hw2d": "Cases are minted with immutable numbers; documents and evidence are entered.",
+  "land.hw3t": "Proceed", "land.hw3d": "Hearings, versions, approvals and signatures — each step ledgered.",
+  "land.hw4t": "Conclude", "land.hw4d": "Closed or dismissed, the record is preserved read-only. Nothing is deleted.",
+  "land.stCourts": "Courts", "land.stCases": "Case files", "land.stLedger": "Ledger links", "land.stUsers": "Principals",
+  "land.live": "live from the registry",
+  "land.footer": "LexVault preserves immutable history with controlled modification — who, what, when, where, why, on every record.",
+  "land.demo": "Demonstration registry · legal validity follows notified e-governance frameworks.",
   "signup.namePh": "e.g. Meena Kumari",
   "signup.emailPh": "name@mail.example",
   "signup.ansHint": "Answers are stored only as digests · case-insensitive",
@@ -360,7 +386,7 @@ const hi: Record<string, string> = {
   "firstrun.email": "आधिकारिक ईमेल",
   "firstrun.pw": "पासवर्ड · कम से कम 8 अक्षर",
   "firstrun.pw2": "पासवर्ड की पुष्टि करें",
-  "firstrun.argon": "Argon2id सारांश के रूप में सुरक्षित · हर साइन-इन पर MFA अनिवार्य",
+  "firstrun.argon": "क्रेडेंशियल केवल सॉल्टेड सारांश के रूप में संग्रहीत · सत्र अल्पकालिक",
   "firstrun.submit": "रजिस्ट्री बनाएं और गेटवे खोलें",
   "firstrun.after": "बनाने के बाद इन्हीं क्रेडेंशियल से साइन इन करें — संस्थापक खाता कभी हटाया नहीं जा सकता",
   "firstrun.secQ": "सुरक्षा प्रश्न (कारक 3)",
@@ -369,7 +395,7 @@ const hi: Record<string, string> = {
   /* 3-factor gateway */
   "login.tab.signin": "साइन इन",
   "login.tab.signup": "खाता बनाएं",
-  "login.3fa": "3-कारक प्रमाणीकरण",
+  "login.3fa": "सुरक्षित गेटवे",
   "login.f1": "पासवर्ड",
   "login.f2": "वन-टाइम कोड",
   "login.f3": "फ़िंगरप्रिंट",
@@ -414,7 +440,33 @@ const hi: Record<string, string> = {
   "signup.submit": "खाता बनाएं",
   "signup.dupe": "यह ईमेल पहले से पंजीकृत है — कृपया साइन इन करें।",
   "signup.ok": "खाता बन गया — अपने पासवर्ड से साइन इन करें",
-  "signup.3faNote": "हर साइन-इन 3 कारक जाँचता है: पासवर्ड → वन-टाइम कोड → सुरक्षा उत्तर",
+  "signup.3faNote": "साइन-इन परतदार, डिवाइस-आधारित सत्यापन से सुरक्षित है।",
+
+  /* landing page */
+  "land.kicker": "लेक्सवॉल्ट · अभिलेख न्यायालय",
+  "land.h1": "जहाँ हर अभिलेख खड़ा है —",
+  "land.h1b": "और हर अभिलेख उत्तर देता है।",
+  "land.sub": "केस के पूरे जीवनकाल की सुरक्षित रजिस्ट्री: प्रथम सूचना रिपोर्ट से अंतिम आदेश तक। भूमिका-आधारित डॉकेट, प्रति-संस्करण सारांश, और एक ऑडिट श्रृंखला जो कभी नहीं भूलती।",
+  "land.enter": "पोर्टल में प्रवेश करें",
+  "land.create": "खाता बनाएँ",
+  "land.trust": "आईटी अधिनियम 2000 · साक्ष्य अधिनियम धारा 65बी · केवल-जोड़ें लेजर",
+  "land.services": "रजिस्ट्री क्या रखती है",
+  "land.servicesSub": "छह प्रकार के अभिलेख, एक अटूट कस्टडी श्रृंखला।",
+  "land.svc1t": "केस फ़ाइलें", "land.svc1d": "अपरिवर्तनीय क्रमांक, रिकॉर्ड पर पक्षकार, सुनवाई, आदेश और स्थानांतरण।",
+  "land.svc2t": "दस्तावेज़ व संस्करण", "land.svc2d": "हर संपादन नया संस्करण बनता है — SHA-256 से सील, कभी अधिलेखित नहीं।",
+  "land.svc3t": "साक्ष्य कस्टडी", "land.svc3d": "ज़ब्ती से प्रयोगशाला तक, हर स्पर्श करने वाले हाथ दर्ज होते हैं।",
+  "land.svc4t": "सुनवाई व आदेश", "land.svc4d": "पट्ट पर तिथियाँ, डिजिटल हस्ताक्षरित आदेश — चुपके से बदलाव असंभव।",
+  "land.svc5t": "न्यायालय-दर-न्यायालय स्थानांतरण", "land.svc5d": "स्वामित्व बदलता है; इतिहास, फ़ाइलें और लेजर अक्षत रहते हैं।",
+  "land.svc6t": "छेड़छाड़-स्पष्ट ऑडिट", "land.svc6d": "हैश-श्रृंखलित लेजर — कड़ी-दर-कड़ी सत्यापित, प्रशासक भी नहीं मिटा सकते।",
+  "land.how": "केस रजिस्ट्री में कैसे चलता है",
+  "land.hw1t": "स्थापना", "land.hw1d": "संस्थापक रजिस्ट्रार रजिस्ट्री खोलता है और न्यायालय पंजीकृत करता है।",
+  "land.hw2t": "अभिलेखन", "land.hw2d": "केस अपरिवर्तनीय क्रमांक के साथ बनते हैं; दस्तावेज़ व साक्ष्य दर्ज होते हैं।",
+  "land.hw3t": "कार्रवाई", "land.hw3d": "सुनवाई, संस्करण, स्वीकृति और हस्ताक्षर — हर चरण लेजर में।",
+  "land.hw4t": "समापन", "land.hw4d": "बंद या खारिज — अभिलेख केवल-पठन रूप में सुरक्षित। कुछ भी हटाया नहीं जाता।",
+  "land.stCourts": "न्यायालय", "land.stCases": "केस फ़ाइलें", "land.stLedger": "लेजर कड़ियाँ", "land.stUsers": "उपयोगकर्ता",
+  "land.live": "रजिस्ट्री से लाइव",
+  "land.footer": "लेक्सवॉल्ट अपरिवर्तनीय इतिहास को नियंत्रित संशोधन के साथ सुरक्षित रखता है — हर अभिलेख पर कौन, क्या, कब, कहाँ, क्यों।",
+  "land.demo": "प्रदर्शन रजिस्ट्री · विधिक वैधता अधिसूचित ई-गवर्नेंस ढाँचे के अनुसार।",
   "signup.namePh": "जैसे मीना कुमारी",
   "signup.emailPh": "naam@mail.example",
   "signup.ansHint": "उत्तर केवल डिजेस्ट के रूप में सुरक्षित · बड़े-छोटे अक्षर मायने नहीं रखते",
@@ -504,12 +556,107 @@ const hi: Record<string, string> = {
   "search.suppressed": "अतिरिक्त मिलान प्राधिकरण गेटवे द्वारा रोके गए। वे अभिलेख हैं या नहीं, और उनमें क्या है — यह आपकी भूमिका को प्रकट नहीं किया जाता।",
 };
 
-const DICTS: Record<string, Record<string, string>> = { en, hi };
+const bn: Record<string, string> = {
+  "app.tag": "বিচারিক নথি পোর্টাল",
+  "nav.console": "ড্যাশবোর্ড", "nav.cases": "মামলার নথি", "nav.mycases": "আমার মামলা", "nav.search": "খোঁজ", "nav.audit": "নিরীক্ষা ও নিরাপত্তা", "nav.admin": "প্রশাসন",
+  "hdr.notifications": "বিজ্ঞপ্তি", "hdr.markRead": "সব পঠিত", "hdr.noNotices": "কোনো বিজ্ঞপ্তি নেই", "hdr.activity": "সরাসরি কার্যকলাপ", "hdr.quickNav": "দ্রুত নেভিগেশন", "hdr.notices": "রেজিস্ট্রি বিজ্ঞপ্তি", "hdr.emptyFeed": "এখনো কোনো কার্যকলাপ নেই — আপনার প্রতিটি কাজ এখানে লিপিবদ্ধ হবে।", "hdr.logout": "সাইন আউট", "hdr.session": "সেশন", "hdr.renews": "কার্যকলাপে নবায়ন", "hdr.expires": "সেশন শীঘ্রই শেষ হবে",
+  "act.open": "খুলুন", "act.view": "দেখুন", "act.upload": "আপলোড", "act.download": "ডাউনলোড", "act.edit": "সম্পাদনা", "act.approve": "অনুমোদন", "act.sign": "স্বাক্ষর", "act.cancel": "বাতিল", "act.save": "সংরক্ষণ", "act.search": "খুঁজুন", "act.close": "বন্ধ", "act.transfer": "মামলা স্থানান্তর", "act.closeCase": "মামলা বন্ধ", "act.dismissCase": "মামলা খারিজ", "act.verify": "যাচাই", "act.history": "সংস্করণ ইতিহাস", "act.auditHistory": "নিরীক্ষা ইতিহাস", "act.back": "ফিরে যান", "act.confirm": "নিশ্চিত",
+  "st.FILED": "দায়ের", "st.INVESTIGATION": "তদন্তাধীন", "st.TRIAL": "বিচারাধীন", "st.JUDGMENT": "রায় সংরক্ষিত", "st.CLOSED": "বন্ধ", "st.DISMISSED": "খারিজ",
+  "dcls.PUBLIC": "সার্বজনীন", "dcls.COURT": "আদালত", "dcls.INVESTIGATION": "তদন্ত", "dcls.PRIVILEGED": "বিশেষাধিকার", "dcls.RESTRICTED": "সীমিত",
+  "dst.DRAFT": "খসড়া", "dst.REVIEW": "পর্যালোচনা", "dst.APPROVED": "অনুমোদিত", "dst.SIGNED": "স্বাক্ষরিত", "dst.RESTRICTED": "সীমিত", "dst.ARCHIVED": "সংরক্ষিত",
+  "login.tab.signin": "সাইন ইন", "login.tab.signup": "অ্যাকাউন্ট তৈরি", "login.title": "রেজিস্ট্রিতে সাইন ইন", "login.password": "পাসওয়ার্ড", "login.id": "আইডি বা ইমেল", "login.continue": "এগিয়ে যান", "login.verify": "যাচাই করুন", "login.mfaTitle": "এককালীন কোড", "login.mfaSub": "আপনার নিবন্ধিত অথেনটিকেটর থেকে ৬ সংখ্যার কোড দিন।", "login.principals": "নিবন্ধিত ব্যবহারকারী",
+  "signup.title": "অ্যাকাউন্ট তৈরি করুন", "signup.submit": "অ্যাকাউন্ট তৈরি করুন",
+  "a11y.lang": "ভাষা", "a11y.theme": "রঙের থিম", "a11y.light": "লাইট মোড", "a11y.dark": "ডার্ক মোড", "a11y.size": "অক্ষরের আকার", "a11y.smaller": "ছোট অক্ষর", "a11y.larger": "বড় অক্ষর", "a11y.toastTheme": "থিম পরিবর্তিত", "a11y.toastSize": "অক্ষরের আকার", "a11y.toastLang": "Language changed · ভাষা বাংলায়",
+  "land.enter": "পোর্টালে প্রবেশ", "land.create": "অ্যাকাউন্ট তৈরি করুন",
+};
+
+const ta: Record<string, string> = {
+  "app.tag": "நீதித்துறை ஆவண போர்டல்",
+  "nav.console": "டாஷ்போர்டு", "nav.cases": "வழக்கு கோப்புகள்", "nav.mycases": "என் வழக்குகள்", "nav.search": "தேடல்", "nav.audit": "தணிக்கை & பாதுகாப்பு", "nav.admin": "நிர்வாகம்",
+  "hdr.notifications": "அறிவிப்புகள்", "hdr.markRead": "அனைத்தையும் படித்ததாக்கு", "hdr.noNotices": "அறிவிப்புகள் இல்லை", "hdr.activity": "நேரடி செயல்பாடு", "hdr.quickNav": "விரைவு வழிசெலுத்தல்", "hdr.notices": "பதிவேடு அறிவிப்புகள்", "hdr.emptyFeed": "இன்னும் செயல்பாடு இல்லை — உங்கள் ஒவ்வொரு செயலும் இங்கு பதிவாகும்.", "hdr.logout": "வெளியேறு", "hdr.session": "அமர்வு", "hdr.renews": "செயல்பாட்டில் புதுப்பிப்பு", "hdr.expires": "அமர்வு விரைவில் முடியும்",
+  "act.open": "திற", "act.view": "காண", "act.upload": "பதிவேற்று", "act.download": "பதிவிறக்கு", "act.edit": "திருத்து", "act.approve": "ஒப்புதல்", "act.sign": "கையொப்பம்", "act.cancel": "ரத்து", "act.save": "சேமி", "act.search": "தேடு", "act.close": "மூடு", "act.transfer": "வழக்கு மாற்றம்", "act.closeCase": "வழக்கை மூடு", "act.dismissCase": "வழக்கை தள்ளுபடி", "act.verify": "சரிபார்", "act.history": "பதிப்பு வரலாறு", "act.auditHistory": "தணிக்கை வரலாறு", "act.back": "பின்செல்", "act.confirm": "உறுதிப்படுத்து",
+  "st.FILED": "தாக்கல்", "st.INVESTIGATION": "விசாரணையில்", "st.TRIAL": "விசாரணை நடப்பில்", "st.JUDGMENT": "தீர்ப்பு", "st.CLOSED": "மூடப்பட்டது", "st.DISMISSED": "தள்ளுபடி",
+  "dcls.PUBLIC": "பொது", "dcls.COURT": "நீதிமன்றம்", "dcls.INVESTIGATION": "விசாரணை", "dcls.PRIVILEGED": "சலுகை", "dcls.RESTRICTED": "கட்டுப்பாடு",
+  "dst.DRAFT": "வரைவு", "dst.REVIEW": "மதிப்பாய்வு", "dst.APPROVED": "ஒப்புதல்", "dst.SIGNED": "கையொப்பம்", "dst.RESTRICTED": "கட்டுப்பாடு", "dst.ARCHIVED": "காப்பகம்",
+  "login.tab.signin": "உள்நுழைய", "login.tab.signup": "கணக்கு உருவாக்க", "login.title": "பதிவேட்டில் உள்நுழைய", "login.password": "கடவுச்சொல்", "login.id": "ஐடி அல்லது மின்னஞ்சல்", "login.continue": "தொடர", "login.verify": "சரிபார்", "login.mfaTitle": "ஒருமுறை குறியீடு", "login.mfaSub": "உங்கள் அங்கீகார செயலியிலிருந்து 6 இலக்க குறியீட்டை உள்ளிடவும்.", "login.principals": "பதிவுசெய்த பயனர்கள்",
+  "signup.title": "கணக்கை உருவாக்குங்கள்", "signup.submit": "கணக்கை உருவாக்கு",
+  "a11y.lang": "மொழி", "a11y.theme": "நிற தீம்", "a11y.light": "லைட் மோடு", "a11y.dark": "டார்க் மோடு", "a11y.size": "எழுத்து அளவு", "a11y.smaller": "சிறிய எழுத்து", "a11y.larger": "பெரிய எழுத்து", "a11y.toastTheme": "தீம் மாற்றப்பட்டது", "a11y.toastSize": "எழுத்து அளவு", "a11y.toastLang": "Language changed · மொழி தமிழில்",
+  "land.enter": "போர்டலுக்குள் செல்ல", "land.create": "கணக்கு உருவாக்க",
+};
+
+const te: Record<string, string> = {
+  "app.tag": "న్యాయ పత్రాల పోర్టల్",
+  "nav.console": "డాష్‌బోర్డ్", "nav.cases": "కేసు ఫైళ్ళు", "nav.mycases": "నా కేసులు", "nav.search": "శోధన", "nav.audit": "ఆడిట్ & భద్రత", "nav.admin": "పరిపాలన",
+  "hdr.notifications": "నోటిఫికేషన్లు", "hdr.markRead": "అన్నీ చదివినవిగా", "hdr.noNotices": "నోటిఫికేషన్లు లేవు", "hdr.activity": "ప్రత్యక్ష కార్యకలాపాలు", "hdr.quickNav": "త్వరిత నావిగేషన్", "hdr.notices": "రిజిస్ట్రీ నోటీసులు", "hdr.emptyFeed": "ఇంకా కార్యకలాపాలు లేవు — మీ ప్రతి చర్య ఇక్కడ నమోదవుతుంది.", "hdr.logout": "సైన్ అవుట్", "hdr.session": "సెషన్", "hdr.renews": "కార్యకలాపంతో పునరుద్ధరణ", "hdr.expires": "సెషన్ త్వరలో ముగుస్తుంది",
+  "act.open": "తెరువు", "act.view": "చూడు", "act.upload": "అప్‌లోడ్", "act.download": "డౌన్‌లోడ్", "act.edit": "సవరించు", "act.approve": "ఆమోదించు", "act.sign": "సంతకం", "act.cancel": "రద్దు", "act.save": "సేవ్", "act.search": "శోధించు", "act.close": "మూసివేయి", "act.transfer": "కేసు బదిలీ", "act.closeCase": "కేసు మూసివేయి", "act.dismissCase": "కేసు కొట్టివేయి", "act.verify": "ధృవీకరించు", "act.history": "వెర్షన్ చరిత్ర", "act.auditHistory": "ఆడిట్ చరిత్ర", "act.back": "వెనుకకు", "act.confirm": "నిర్ధారించు",
+  "st.FILED": "దాఖలు", "st.INVESTIGATION": "దర్యాప్తులో", "st.TRIAL": "విచారణలో", "st.JUDGMENT": "తీర్పు", "st.CLOSED": "మూసివేయబడింది", "st.DISMISSED": "కొట్టివేయబడింది",
+  "dcls.PUBLIC": "బహిరంగ", "dcls.COURT": "న్యాయస్థానం", "dcls.INVESTIGATION": "దర్యాప్తు", "dcls.PRIVILEGED": "ప్రత్యేక హక్కు", "dcls.RESTRICTED": "నియంత్రిత",
+  "dst.DRAFT": "డ్రాఫ్ట్", "dst.REVIEW": "సమీక్ష", "dst.APPROVED": "ఆమోదించబడింది", "dst.SIGNED": "సంతకం చేయబడింది", "dst.RESTRICTED": "నియంత్రిత", "dst.ARCHIVED": "ఆర్కైవ్",
+  "login.tab.signin": "సైన్ ఇన్", "login.tab.signup": "ఖాతా సృష్టించు", "login.title": "రిజిస్ట్రీలో సైన్ ఇన్", "login.password": "పాస్‌వర్డ్", "login.id": "ఐడి లేదా ఇమెయిల్", "login.continue": "కొనసాగించు", "login.verify": "ధృవీకరించు", "login.mfaTitle": "వన్-టైమ్ కోడ్", "login.mfaSub": "మీ అథెంటికేటర్ నుండి 6 అంకెల కోడ్‌ను నమోదు చేయండి.", "login.principals": "నమోదైన వినియోగదారులు",
+  "signup.title": "ఖాతాను సృష్టించండి", "signup.submit": "ఖాతా సృష్టించు",
+  "a11y.lang": "భాష", "a11y.theme": "రంగు థీమ్", "a11y.light": "లైట్ మోడ్", "a11y.dark": "డార్క్ మోడ్", "a11y.size": "అక్షర పరిమాణం", "a11y.smaller": "చిన్న అక్షరాలు", "a11y.larger": "పెద్ద అక్షరాలు", "a11y.toastTheme": "థీమ్ మార్చబడింది", "a11y.toastSize": "అక్షర పరిమాణం", "a11y.toastLang": "Language changed · భాష తెలుగులో",
+  "land.enter": "పోర్టల్‌లోకి ప్రవేశించండి", "land.create": "ఖాతా సృష్టించు",
+};
+
+const mr: Record<string, string> = {
+  "app.tag": "न्यायिक दस्तऐवज पोर्टल",
+  "nav.console": "डॅशबोर्ड", "nav.cases": "खटले फाइल्स", "nav.mycases": "माझे खटले", "nav.search": "शोध", "nav.audit": "ऑडिट व सुरक्षा", "nav.admin": "प्रशासन",
+  "hdr.notifications": "सूचना", "hdr.markRead": "सर्व वाचले", "hdr.noNotices": "सूचना नाहीत", "hdr.activity": "थेट क्रिया", "hdr.quickNav": "जलद नेव्हिगेशन", "hdr.notices": "रजिस्ट्री सूचना", "hdr.emptyFeed": "अद्याप क्रिया नाही — तुमची प्रत्येक कृती येथे नोंदवली जाईल.", "hdr.logout": "साइन आउट", "hdr.session": "सत्र", "hdr.renews": "क्रियेवर नूतनीकरण", "hdr.expires": "सत्र लवकरच संपेल",
+  "act.open": "उघडा", "act.view": "पहा", "act.upload": "अपलोड", "act.download": "डाउनलोड", "act.edit": "संपादन", "act.approve": "मंजूर", "act.sign": "स्वाक्षरी", "act.cancel": "रद्द", "act.save": "जतन", "act.search": "शोधा", "act.close": "बंद", "act.transfer": "खटला हस्तांतरण", "act.closeCase": "खटला बंद करा", "act.dismissCase": "खटला फेटाळा", "act.verify": "पडताळा", "act.history": "आवृत्ती इतिहास", "act.auditHistory": "ऑडिट इतिहास", "act.back": "मागे", "act.confirm": "पुष्टी",
+  "st.FILED": "दाखल", "st.INVESTIGATION": "चौकशी सुरू", "st.TRIAL": "सुनावणी सुरू", "st.JUDGMENT": "निकाल राखीव", "st.CLOSED": "बंद", "st.DISMISSED": "फेटाळले",
+  "dcls.PUBLIC": "सार्वजनिक", "dcls.COURT": "न्यायालय", "dcls.INVESTIGATION": "चौकशी", "dcls.PRIVILEGED": "विशेषाधिकार", "dcls.RESTRICTED": "प्रतिबंधित",
+  "dst.DRAFT": "मसुदा", "dst.REVIEW": "आढावा", "dst.APPROVED": "मंजूर", "dst.SIGNED": "स्वाक्षरी", "dst.RESTRICTED": "प्रतिबंधित", "dst.ARCHIVED": "संग्रहित",
+  "login.tab.signin": "साइन इन", "login.tab.signup": "खाते तयार करा", "login.title": "रजिस्ट्रीत साइन इन करा", "login.password": "पासवर्ड", "login.id": "आयडी किंवा ईमेल", "login.continue": "पुढे जा", "login.verify": "पडताळा", "login.mfaTitle": "वन-टाइम कोड", "login.mfaSub": "तुमच्या ऑथेंटिकेटरवरून ६ अंकी कोड टाका.", "login.principals": "नोंदणीकृत वापरकर्ते",
+  "signup.title": "खाते तयार करा", "signup.submit": "खाते तयार करा",
+  "a11y.lang": "भाषा", "a11y.theme": "रंग थीम", "a11y.light": "लाइट मोड", "a11y.dark": "डार्क मोड", "a11y.size": "अक्षर आकार", "a11y.smaller": "लहान अक्षरे", "a11y.larger": "मोठी अक्षरे", "a11y.toastTheme": "थीम बदलली", "a11y.toastSize": "अक्षर आकार", "a11y.toastLang": "Language changed · भाषा मराठीत",
+  "land.enter": "पोर्टलमध्ये प्रवेश करा", "land.create": "खाते तयार करा",
+};
+
+const pa: Record<string, string> = {
+  "app.tag": "ਨਿਆਂਇਕ ਦਸਤਾਵੇਜ਼ ਪੋਰਟਲ",
+  "nav.console": "ਡੈਸ਼ਬੋਰਡ", "nav.cases": "ਕੇਸ ਫਾਈਲਾਂ", "nav.mycases": "ਮੇਰੇ ਕੇਸ", "nav.search": "ਖੋਜ", "nav.audit": "ਆਡਿਟ ਤੇ ਸੁਰੱਖਿਆ", "nav.admin": "ਪ੍ਰਸ਼ਾਸਨ",
+  "hdr.notifications": "ਸੂਚਨਾਵਾਂ", "hdr.markRead": "ਸਭ ਪੜ੍ਹੀਆਂ", "hdr.noNotices": "ਕੋਈ ਸੂਚਨਾ ਨਹੀਂ", "hdr.activity": "ਲਾਈਵ ਗਤੀਵਿਧੀ", "hdr.quickNav": "ਤੁਰੰਤ ਨੇਵੀਗੇਸ਼ਨ", "hdr.notices": "ਰਜਿਸਟਰੀ ਸੂਚਨਾਵਾਂ", "hdr.emptyFeed": "ਅਜੇ ਕੋਈ ਗਤੀਵਿਧੀ ਨਹੀਂ — ਤੁਹਾਡਾ ਹਰ ਕੰਮ ਇੱਥੇ ਦਰਜ ਹੋਵੇਗਾ।", "hdr.logout": "ਸਾਈਨ ਆਊਟ", "hdr.session": "ਸ਼ੈਸ਼ਨ", "hdr.renews": "ਗਤੀਵਿਧੀ 'ਤੇ ਨਵਿਆਉਣਾ", "hdr.expires": "ਸ਼ੈਸ਼ਨ ਜਲਦੀ ਖ਼ਤਮ ਹੋਵੇਗਾ",
+  "act.open": "ਖੋਲ੍ਹੋ", "act.view": "ਵੇਖੋ", "act.upload": "ਅੱਪਲੋਡ", "act.download": "ਡਾਊਨਲੋਡ", "act.edit": "ਸੰਪਾਦਨ", "act.approve": "ਮਨਜ਼ੂਰ", "act.sign": "ਦਸਤਖਤ", "act.cancel": "ਰੱਦ", "act.save": "ਸੰਭਾਲੋ", "act.search": "ਖੋਜੋ", "act.close": "ਬੰਦ", "act.transfer": "ਕੇਸ ਤਬਾਦਲਾ", "act.closeCase": "ਕੇਸ ਬੰਦ ਕਰੋ", "act.dismissCase": "ਕੇਸ ਖਾਰਜ", "act.verify": "ਜਾਂਚ", "act.history": "ਵਰਜਨ ਇਤਿਹਾਸ", "act.auditHistory": "ਆਡਿਟ ਇਤਿਹਾਸ", "act.back": "ਪਿੱਛੇ", "act.confirm": "ਪੁਸ਼ਟੀ",
+  "st.FILED": "ਦਾਇਰ", "st.INVESTIGATION": "ਜਾਂਚ ਜਾਰੀ", "st.TRIAL": "ਸੁਣਵਾਈ ਜਾਰੀ", "st.JUDGMENT": "ਫ਼ੈਸਲਾ ਰਾਖਵਾਂ", "st.CLOSED": "ਬੰਦ", "st.DISMISSED": "ਖਾਰਜ",
+  "dcls.PUBLIC": "ਜਨਤਕ", "dcls.COURT": "ਅਦਾਲਤ", "dcls.INVESTIGATION": "ਜਾਂਚ", "dcls.PRIVILEGED": "ਵਿਸ਼ੇਸ਼ ਅਧਿਕਾਰ", "dcls.RESTRICTED": "ਪ੍ਰਤੀਬੰਧਿਤ",
+  "dst.DRAFT": "ਖਰੜਾ", "dst.REVIEW": "ਸਮੀਖਿਆ", "dst.APPROVED": "ਮਨਜ਼ੂਰ", "dst.SIGNED": "ਦਸਤਖਤ", "dst.RESTRICTED": "ਪ੍ਰਤੀਬੰਧਿਤ", "dst.ARCHIVED": "ਆਰਕਾਈਵ",
+  "login.tab.signin": "ਸਾਈਨ ਇਨ", "login.tab.signup": "ਖਾਤਾ ਬਣਾਓ", "login.title": "ਰਜਿਸਟਰੀ ਵਿੱਚ ਸਾਈਨ ਇਨ", "login.password": "ਪਾਸਵਰਡ", "login.id": "ਆਈਡੀ ਜਾਂ ਈਮੇਲ", "login.continue": "ਅੱਗੇ ਵਧੋ", "login.verify": "ਜਾਂਚੋ", "login.mfaTitle": "ਵਨ-ਟਾਈਮ ਕੋਡ", "login.mfaSub": "ਆਪਣੇ ਪ੍ਰਮਾਣਿਕ ਕਰਤਾ ਤੋਂ 6 ਅੰਕਾਂ ਦਾ ਕੋਡ ਭਰੋ।", "login.principals": "ਰਜਿਸਟਰਡ ਵਰਤੋਂਕਾਰ",
+  "signup.title": "ਖਾਤਾ ਬਣਾਓ", "signup.submit": "ਖਾਤਾ ਬਣਾਓ",
+  "a11y.lang": "ਭਾਸ਼ਾ", "a11y.theme": "ਰੰਗ ਥੀਮ", "a11y.light": "ਲਾਈਟ ਮੋਡ", "a11y.dark": "ਡਾਰਕ ਮੋਡ", "a11y.size": "ਅੱਖਰ ਆਕਾਰ", "a11y.smaller": "ਛੋਟੇ ਅੱਖਰ", "a11y.larger": "ਵੱਡੇ ਅੱਖਰ", "a11y.toastTheme": "ਥੀਮ ਬਦਲੀ ਗਈ", "a11y.toastSize": "ਅੱਖਰ ਆਕਾਰ", "a11y.toastLang": "Language changed · ਭਾਸ਼ਾ ਪੰਜਾਬੀ ਵਿੱਚ",
+  "land.enter": "ਪੋਰਟਲ ਵਿੱਚ ਦਾਖ਼ਲ ਹੋਵੋ", "land.create": "ਖਾਤਾ ਬਣਾਓ",
+};
+
+const gu: Record<string, string> = {
+  "app.tag": "ન્યાયિક દસ્તાવેજ પોર્ટલ",
+  "nav.console": "ડેશબોર્ડ", "nav.cases": "કેસ ફાઇલો", "nav.mycases": "મારા કેસ", "nav.search": "શોધ", "nav.audit": "ઓડિટ અને સુરક્ષા", "nav.admin": "વહીવટ",
+  "hdr.notifications": "સૂચનાઓ", "hdr.markRead": "બધું વાંચેલું", "hdr.noNotices": "કોઈ સૂચના નથી", "hdr.activity": "લાઇવ પ્રવૃત્તિ", "hdr.quickNav": "ઝડપી નેવિગેશન", "hdr.notices": "રજિસ્ટ્રી સૂચનાઓ", "hdr.emptyFeed": "હજુ પ્રવૃત્તિ નથી — તમારું દરેક કામ અહીં નોંધાશે.", "hdr.logout": "સાઇન આઉટ", "hdr.session": "સેશન", "hdr.renews": "પ્રવૃત્તિ પર નવીનીકરણ", "hdr.expires": "સેશન ટૂંક સમયમાં સમાપ્ત થશે",
+  "act.open": "ખોલો", "act.view": "જુઓ", "act.upload": "અપલોડ", "act.download": "ડાઉનલોડ", "act.edit": "સંપાદન", "act.approve": "મંજૂર", "act.sign": "સહી", "act.cancel": "રદ", "act.save": "સાચવો", "act.search": "શોધો", "act.close": "બંધ", "act.transfer": "કેસ ટ્રાન્સફર", "act.closeCase": "કેસ બંધ કરો", "act.dismissCase": "કેસ રદ કરો", "act.verify": "ચકાસો", "act.history": "આવૃત્તિ ઇતિહાસ", "act.auditHistory": "ઓડિટ ઇતિહાસ", "act.back": "પાછા", "act.confirm": "પુષ્ટિ",
+  "st.FILED": "દાખલ", "st.INVESTIGATION": "તપાસ ચાલુ", "st.TRIAL": "સુનાવણી ચાલુ", "st.JUDGMENT": "ચુકાદો બાકી", "st.CLOSED": "બંધ", "st.DISMISSED": "રદ",
+  "dcls.PUBLIC": "જાહેર", "dcls.COURT": "કોર્ટ", "dcls.INVESTIGATION": "તપાસ", "dcls.PRIVILEGED": "વિશેષાધિકાર", "dcls.RESTRICTED": "પ્રતિબંધિત",
+  "dst.DRAFT": "ડ્રાફ્ટ", "dst.REVIEW": "સમીક્ષા", "dst.APPROVED": "મંજૂર", "dst.SIGNED": "સહી", "dst.RESTRICTED": "પ્રતિબંધિત", "dst.ARCHIVED": "આર્કાઇવ",
+  "login.tab.signin": "સાઇન ઇન", "login.tab.signup": "ખાતું બનાવો", "login.title": "રજિસ્ટ્રીમાં સાઇન ઇન", "login.password": "પાસવર્ડ", "login.id": "આઈડી અથવા ઈમેલ", "login.continue": "આગળ વધો", "login.verify": "ચકાસો", "login.mfaTitle": "વન-ટાઇમ કોડ", "login.mfaSub": "તમારા ઓથેન્ટિકેટરમાંથી 6 અંકનો કોડ દાખલ કરો.", "login.principals": "નોંધાયેલા વપરાશકર્તાઓ",
+  "signup.title": "ખાતું બનાવો", "signup.submit": "ખાતું બનાવો",
+  "a11y.lang": "ભાષા", "a11y.theme": "રંગ થીમ", "a11y.light": "લાઇટ મોડ", "a11y.dark": "ડાર્ક મોડ", "a11y.size": "અક્ષર કદ", "a11y.smaller": "નાના અક્ષરો", "a11y.larger": "મોટા અક્ષરો", "a11y.toastTheme": "થીમ બદલાઈ", "a11y.toastSize": "અક્ષર કદ", "a11y.toastLang": "Language changed · ભાષા ગુજરાતીમાં",
+  "land.enter": "પોર્ટલમાં પ્રવેશો", "land.create": "ખાતું બનાવો",
+};
+
+const DICTS: Record<string, Record<string, string>> = { en, hi, bn, ta, te, mr, pa, gu };
+
+export type Lang = "en" | "hi" | "bn" | "ta" | "te" | "mr" | "pa" | "gu";
+export const LANGUAGE_NAMES: { code: Lang; label: string }[] = [
+  { code: "en", label: "English" },
+  { code: "hi", label: "हिन्दी" },
+  { code: "bn", label: "বাংলা" },
+  { code: "ta", label: "தமிழ்" },
+  { code: "te", label: "తెలుగు" },
+  { code: "mr", label: "मराठी" },
+  { code: "pa", label: "ਪੰਜਾਬੀ" },
+  { code: "gu", label: "ગુજરાતી" },
+];
 
 /* ================================================================== */
 /* Provider: language + theme + text size                              */
 /* ================================================================== */
-export type Lang = "en" | "hi";
 export type Theme = "light" | "dark";
 
 const ZOOM_STEPS = [1, 1.15, 1.3, 1.5];

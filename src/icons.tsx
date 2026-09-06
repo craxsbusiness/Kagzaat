@@ -19,6 +19,19 @@ function S({ c, children, sw = 1.7 }: { c?: string; children: ReactNode; sw?: nu
 
 type P = { c?: string };
 
+export const IcBox = ({ c }: P) => (
+  <S c={c}>
+    <path d="M3.5 8L12 4l8.5 4v9L12 21l-8.5-4z" />
+    <path d="M3.5 8L12 12l8.5-4M12 12v9" />
+    <path d="M7.75 6l8.5 4" />
+  </S>
+);
+export const IcPillar = ({ c }: P) => (
+  <S c={c}>
+    <path d="M5 4.5h14M6.5 4.5v2M17.5 4.5v2M5 19.5h14M6.5 19.5v-2M17.5 19.5v-2" />
+    <path d="M8.5 6.5v11M12 6.5v11M15.5 6.5v11" />
+  </S>
+);
 export const IcShield = ({ c }: P) => (
   <S c={c}><path d="M12 2.5l7.5 2.8v5.6c0 4.6-3.2 8-7.5 10.6C7.7 18.9 4.5 15.5 4.5 10.9V5.3z" /><circle cx="12" cy="10.2" r="2.1" /><path d="M12 12.3v3.4" /></S>
 );

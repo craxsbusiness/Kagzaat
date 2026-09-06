@@ -78,7 +78,7 @@ const CASE_STATUS_STYLE: Record<CaseStatusKey, string> = {
 export function CaseStatusBadge({ status, small = false }: { status: CaseStatusKey; small?: boolean }) {
   const t = useT();
   return (
-    <span className={`inline-flex items-center gap-1.5 border font-mono font-semibold uppercase tracking-[0.06em] whitespace-nowrap ${small ? "text-[9.5px] px-1.5 py-0.5" : "text-[10.5px] px-2 py-0.5"} ${CASE_STATUS_STYLE[status]}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full border font-mono font-semibold uppercase tracking-[0.06em] whitespace-nowrap ${small ? "text-[9.5px] px-2 py-0.5" : "text-[10.5px] px-2.5 py-0.5"} ${CASE_STATUS_STYLE[status]}`}>
       <span className="inline-block w-1.5 h-1.5 bg-current" />
       {t(`st.${status}`)}
     </span>
@@ -97,7 +97,7 @@ const DOC_CLASS_STYLE: Record<DocClassKey, string> = {
 export function DocClassBadge({ level, small = false }: { level: DocClassKey; small?: boolean }) {
   const t = useT();
   return (
-    <span className={`inline-flex items-center border font-mono font-semibold uppercase tracking-[0.06em] whitespace-nowrap ${small ? "text-[9px] px-1 py-px" : "text-[10px] px-1.5 py-0.5"} ${DOC_CLASS_STYLE[level]}`}>
+    <span className={`inline-flex items-center rounded-full border font-mono font-semibold uppercase tracking-[0.06em] whitespace-nowrap ${small ? "text-[9px] px-1.5 py-px" : "text-[10px] px-2 py-0.5"} ${DOC_CLASS_STYLE[level]}`}>
       {t(`dcls.${level}`)}
     </span>
   );
@@ -155,7 +155,7 @@ export function Chip({ children, tone = "neutral" }: { children: ReactNode; tone
       : tone === "azure"
       ? "bg-azure/10 text-azure border-azure/40"
       : "bg-paper2 text-ink2 border-line";
-  return <span className={`inline-flex items-center border px-1.5 py-0.5 text-[10px] font-mono tracking-wide uppercase whitespace-nowrap ${t}`}>{children}</span>;
+  return <span className={`inline-flex items-center rounded-full border px-2.5 py-[3px] text-[10px] font-mono tracking-wide uppercase whitespace-nowrap ${t}`}>{children}</span>;
 }
 
 /* ------------------------------------------------------------------ */
@@ -163,7 +163,7 @@ export function Chip({ children, tone = "neutral" }: { children: ReactNode; tone
 /* ------------------------------------------------------------------ */
 export function Panel({ title, right, children, className = "", delay = 0 }: { title?: ReactNode; right?: ReactNode; children: ReactNode; className?: string; delay?: number }) {
   return (
-    <section className={`rise relative bg-card/90 border border-line shadow-[0_1px_0_rgba(0,0,0,0.04),0_8px_24px_-18px_var(--shadowc)] ${className}`} style={{ animationDelay: `${delay}ms` }}>
+    <section className={`rise relative bg-card/90 border border-line rounded-[14px] overflow-hidden shadow-[inset_0_1px_0_color-mix(in_srgb,var(--brass)_28%,transparent),0_1px_2px_rgba(0,0,0,0.05),0_12px_28px_-20px_var(--shadowc)] ${className}`} style={{ animationDelay: `${delay}ms` }}>
       {title !== undefined && (
         <header className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-line bg-paper2/60">
           <h3 className="font-display font-semibold uppercase tracking-[0.14em] text-[13px] text-navy dark:text-ink flex items-center gap-2">
@@ -191,7 +191,7 @@ export function StatTile({ label, value, sub, tone = "navy", delay = 0 }: { labe
   const bar =
     tone === "red" ? "bg-crimson" : tone === "amber" ? "bg-amber" : tone === "green" ? "bg-green2" : tone === "azure" ? "bg-azure" : tone === "plum" ? "bg-plum" : "bg-navy";
   return (
-    <div className="rise relative bg-card/90 border border-line px-4 pt-3.5 pb-3 overflow-hidden group hover:border-ink3 transition-colors" style={{ animationDelay: `${delay}ms` }}>
+    <div className="rise relative bg-card/90 border border-line rounded-[14px] px-4 pt-3.5 pb-3 overflow-hidden group hover:border-ink3 hover:-translate-y-0.5 transition-all duration-200" style={{ animationDelay: `${delay}ms` }}>
       <span className={`absolute left-0 top-0 bottom-0 w-[3px] ${bar} group-hover:w-[5px] transition-all duration-300`} />
       <p className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink3">{label}</p>
       <p className="font-display font-semibold text-[34px] leading-none text-ink mt-1.5 tabular-nums">{value}</p>
@@ -212,7 +212,7 @@ export function Modal({ onClose, children, wide = false }: { onClose: () => void
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-navy/60 fade-in" onClick={onClose} />
-      <div role="dialog" aria-modal="true" className={`modal-in relative bg-paper border border-line shadow-2xl shadow-navy/40 w-full ${wide ? "max-w-2xl" : "max-w-lg"} max-h-[88vh] overflow-y-auto`}>
+      <div role="dialog" aria-modal="true" className={`modal-in relative bg-paper border border-line rounded-2xl shadow-2xl shadow-navy/40 w-full ${wide ? "max-w-2xl" : "max-w-lg"} max-h-[88vh] overflow-y-auto`}>
         {children}
       </div>
     </div>
@@ -238,7 +238,7 @@ export function ModalHead({ title, sub, onClose }: { title: string; sub?: string
 /* ------------------------------------------------------------------ */
 export function Btn({ children, onClick, kind = "primary", disabled = false, className = "", title, type = "button" }: { children: ReactNode; onClick?: () => void; kind?: "primary" | "ghost" | "danger" | "navy" | "subtle" | "green"; disabled?: boolean; className?: string; title?: string; type?: "button" | "submit" }) {
   const base =
-    "inline-flex items-center justify-center gap-1.5 font-display font-medium uppercase tracking-[0.1em] text-[12.5px] px-3.5 py-2 border transition-all duration-150 active:translate-y-px disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap";
+    "inline-flex items-center justify-center gap-1.5 font-display font-medium uppercase tracking-[0.1em] text-[12.5px] px-3.5 py-2 rounded-lg border transition-all duration-150 hover:shadow-[0_4px_14px_-6px_var(--shadowc)] active:translate-y-px disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap";
   const kinds = {
     primary: "bg-crimson text-paper border-crimson hover:bg-crimson2 hover:border-crimson2",
     navy: "bg-navy text-paper border-navy hover:bg-navy2 hover:border-navy2",
@@ -310,7 +310,7 @@ export function StatusStepper({ status }: { status: CaseStatusKey }) {
 export function ForbiddenPanel({ attempted, onBack }: { attempted: string; onBack: () => void }) {
   return (
     <div className="rise max-w-xl mx-auto mt-10">
-      <div className="border-2 border-dashed border-crimson/60 bg-crimson/[0.04] px-8 py-10 text-center">
+      <div className="arch border-2 border-dashed border-crimson/60 bg-crimson/[0.04] px-8 pt-14 pb-10 text-center">
         <p className="font-display font-bold text-[64px] leading-none text-crimson/80 select-none">403</p>
         <p className="font-display uppercase tracking-[0.2em] text-crimson text-[15px] mt-2">Forbidden — not disclosed</p>
         <p className="text-[13.5px] text-ink2 mt-4 leading-relaxed max-w-md mx-auto">

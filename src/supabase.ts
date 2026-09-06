@@ -30,15 +30,35 @@ export const supabase: SupabaseClient | null =
 
 export const isSupabaseConfigured = (): boolean => supabase !== null;
 
-/** Factor-2 delivery — asks Supabase to email a 6-digit OTP to the user. */
+/** Factor-2 delivery — asks Supabase to email a one-time code (or magic link) to the user.
+ *  The link returns the browser to this portal with a token in the URL hash,
+ *  which the gateway captures to complete the step even if the email template
+ *  doesn't print the 6-digit code. */
 export async function sendOtpEmail(email: string): Promise<{ ok: boolean; error?: string }> {
   if (!supabase) return { ok: false, error: "not-configured" };
   try {
-    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${window.location.origin}/`,
+      },
+    });
     if (error) return { ok: false, error: error.message };
     return { ok: true };
   } catch (e) {
     return { ok: false, error: String(e) };
+  }
+}
+
+/** Drop the Supabase session created when a magic link is followed —
+ *  the portal keeps its own short-lived session. */
+export async function discardSupabaseSession(): Promise<void> {
+  if (!supabase) return;
+  try {
+    await supabase.auth.signOut({ scope: "local" });
+  } catch {
+    /* best effort */
   }
 }
 

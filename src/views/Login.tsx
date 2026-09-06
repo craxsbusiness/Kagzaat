@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { LoginEvent, RoleId, User } from "../data";
-import { ROLE_BANNER, ROLE_LABEL, SEC_QUESTIONS } from "../data";
+import { SEC_QUESTIONS } from "../data";
 import { deviceInfo, hashPassword, hashSecret } from "../lib";
 import { isSupabaseConfigured, sendOtpEmail, verifyEmailOtp } from "../supabase";
 import { Btn, useCopy, useToast } from "../ui";
@@ -10,6 +10,7 @@ import { IcCheck, IcChevD, IcCopy, IcKey, IcLock, IcShield, IcUser, IcX } from "
 interface Props {
   users: User[];
   initialMode?: "signin" | "signup";
+  magicReturnId?: string | null;
   onLogin: (userId: string, device: string, ip: string) => void;
   logLoginEvent: (ev: Omit<LoginEvent, "id" | "ts">) => void;
   /** returns the new person code, or null if the email is already registered */
@@ -20,16 +21,6 @@ interface Props {
 }
 
 const ALL_ROLES: RoleId[] = ["JUDGE", "LAWYER", "ACCUSED", "VICTIM", "POLICE", "ADMIN", "AUDITOR"];
-
-const TONE_BG: Record<string, string> = {
-  crimson: "bg-crimson",
-  rust: "bg-rust",
-  amber: "bg-amber",
-  steel: "bg-steel",
-  plum: "bg-plum",
-  green: "bg-green",
-  azure: "bg-azure",
-};
 
 const field = "w-full bg-navy2/60 border border-navyline px-3 py-2.5 text-[14px] text-paper placeholder:text-paper/35 focus:outline-none focus:border-[#e0b968] transition-colors";
 const label = "font-mono text-[9.5px] uppercase tracking-[0.18em] text-paper/55 block mb-1.5";
@@ -62,8 +53,6 @@ function Gateway(p: Props) {
   const [fails, setFails] = useState(0);
   const [secFails, setSecFails] = useState(0);
   const [lockUntil, setLockUntil] = useState<number | null>(null);
-  const [pickOpen, setPickOpen] = useState(false);
-  const [roleFilter, setRoleFilter] = useState<"ALL" | RoleId>("ALL");
   const [otpSending, setOtpSending] = useState(false);
 
   const [demoCode] = useState(() => String(Math.floor(100000 + Math.random() * 900000)));
@@ -72,11 +61,6 @@ function Gateway(p: Props) {
 
   const device = useMemo(() => deviceInfo(), []);
   const ip = useMemo(() => `10.14.2.${Math.floor(20 + Math.random() * 60)}`, []);
-
-  const filteredPrincipals = useMemo(
-    () => p.users.filter((u) => (roleFilter === "ALL" ? true : u.role === roleFilter)),
-    [p.users, roleFilter]
-  );
 
   const fail = (msg: string) => {
     setErr(msg);
@@ -90,6 +74,23 @@ function Gateway(p: Props) {
     setSecInput("");
     setErr(null);
   };
+
+  /* magic-link return — App captured #access_token and resolved the principal;
+     skip straight to the security question */
+  const magicHandled = useRef(false);
+  useEffect(() => {
+    if (p.magicReturnId && !magicHandled.current) {
+      const u = p.users.find((x) => x.id === p.magicReturnId);
+      if (u && u.status === "ACTIVE") {
+        magicHandled.current = true;
+        setPending(u);
+        setStep("sec");
+        p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_OK", device, ip, location: "Gateway", note: "Email verification link followed · factor 2 completed" });
+        toast("success", t("login.linkOk"));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [p.magicReturnId]);
 
   /* ---------------- step 1 · password ---------------- */
   const submitCreds = async () => {
@@ -139,8 +140,10 @@ function Gateway(p: Props) {
     setErr(null);
     setPending(u);
 
-    /* step 2 · one-time code — real email via Supabase when configured */
+    /* step 2 · one-time code — real email via Supabase when configured.
+       A clicked verification link returns with #access_token and completes this step. */
     if (isSupabaseConfigured()) {
+      localStorage.setItem("lv4:otp-return", u.id);
       setOtpSending(true);
       const r = await sendOtpEmail(u.email);
       setOtpSending(false);
@@ -352,50 +355,7 @@ function Gateway(p: Props) {
                           <Btn kind="green" className="mt-3" onClick={() => setMode("signup")}><IcUser c="w-3.5 h-3.5" /> {t("login.goSignup")}</Btn>
                         </div>
                       ) : (
-                        <>
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <label className="font-mono uppercase tracking-[0.14em] text-[9.5px] text-paper/50 shrink-0" htmlFor="roleFilter">{t("login.roleLbl")}</label>
-                            <select
-                              id="roleFilter"
-                              value={roleFilter}
-                              onChange={(e) => setRoleFilter(e.target.value as "ALL" | RoleId)}
-                              className="flex-1 bg-navy2/60 border border-navyline px-2 py-2 font-mono text-[10.5px] uppercase text-paper/80 focus:outline-none focus:border-[#e0b968] transition-colors"
-                            >
-                              <option value="ALL">{t("login.allRoles")}</option>
-                              {ALL_ROLES.map((r) => (
-                                <option key={r} value={r}>{t(`role.${r}`)}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className="relative">
-                            <button onClick={() => setPickOpen((o) => !o)} className="w-full flex items-center justify-between border border-navyline px-3 py-2.5 text-[11.5px] text-paper/60 hover:text-paper hover:border-paper/40 transition-colors">
-                              <span className="font-mono uppercase tracking-[0.14em] text-[9.5px]">
-                                {t("login.principals")} · {filteredPrincipals.length}
-                              </span>
-                              <span className={`transition-transform ${pickOpen ? "rotate-180" : ""}`}><IcChevD c="w-3.5 h-3.5" /></span>
-                            </button>
-                            {pickOpen && (
-                              <ul className="modal-in absolute left-0 right-0 bottom-full mb-1 bg-navy border border-navyline rounded-lg shadow-xl shadow-black/40 z-20 max-h-56 overflow-y-auto">
-                                {filteredPrincipals.map((u) => (
-                                  <li key={u.id}>
-                                    <button onClick={() => { setUserId(u.id); setPickOpen(false); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-navy2 transition-colors">
-                                      <span className={`w-1.5 h-6 ${TONE_BG[ROLE_BANNER[u.role].tone]}`} />
-                                      <span className="min-w-0 flex-1">
-                                        <span className="block text-[12.5px] font-semibold leading-tight">{u.name}</span>
-                                        <span className="block font-mono text-[9px] uppercase tracking-widest text-paper/45">{t(`role.${u.role}`)} · {u.id}</span>
-                                      </span>
-                                      {u.status === "SUSPENDED" && <span className="font-mono text-[8.5px] uppercase text-crimson">suspended</span>}
-                                    </button>
-                                  </li>
-                                ))}
-                                {filteredPrincipals.length === 0 && (
-                                  <li className="px-3 py-4 text-center font-mono text-[9.5px] uppercase tracking-widest text-paper/40">—</li>
-                                )}
-                              </ul>
-                            )}
-                          </div>
-                          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-paper/35 mt-3 text-center">{t("login.lockNote")}</p>
-                        </>
+                        <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-paper/35 mt-3 text-center">{t("login.lockNote")}</p>
                       )}
                     </footer>
                   </>
@@ -425,9 +385,14 @@ function Gateway(p: Props) {
                         </div>
                       )}
                       {otpMode === "email" && (
-                        <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-green2 flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green2 pulse-dot" /> {t("login.otpSent")} · {pending?.email}
-                        </p>
+                        <div className="space-y-1.5">
+                          <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-green2 flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green2 pulse-dot" /> {t("login.otpSent")} · {pending?.email}
+                          </p>
+                          <p className="font-mono text-[8.5px] leading-relaxed tracking-wide text-paper/40">
+                            {t("login.otpLinkHint")}
+                          </p>
+                        </div>
                       )}
                       {err && <p className="text-[12.5px] text-[#f0a48f] border-l-2 border-crimson pl-3">{err}</p>}
                       <div className="flex gap-2">

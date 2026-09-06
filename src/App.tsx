@@ -7,7 +7,7 @@ import {
   SEED_LOGINS, SEED_NOTICES, SEED_SECURITY, USERS, canDownload, canSeeCase, canSeeDoc, canUpload, keyFingerprint,
 } from "./data";
 import { hashPassword, hashSecret } from "./lib";
-import { isSupabaseConfigured, sendPersonCodeEmail } from "./supabase";
+import { discardSupabaseSession, isSupabaseConfigured, sendPersonCodeEmail } from "./supabase";
 import { fetchRegistryRows, openRegistryChannel, syncAvailable, upsertRegistryRow, type RegistryRow, type SyncKey } from "./supaSync";
 import { Btn, Chip, ToastProvider, useFeed, useToast } from "./ui";
 import { PrefsProvider, usePrefs, useT } from "./i18n";
@@ -64,6 +64,24 @@ function Portal() {
   const [forbidden, setForbidden] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [gateMode, setGateMode] = useState<"landing" | "signin" | "signup">("landing");
+  const [magicReturnId, setMagicReturnId] = useState<string | null>(null);
+
+  /* a clicked email verification link lands here with #access_token=… —
+     complete factor 2 for the pending principal automatically */
+  useEffect(() => {
+    const h = window.location.hash;
+    if (h.includes("access_token=")) {
+      const pendingId = localStorage.getItem("lv4:otp-return");
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      if (pendingId) {
+        localStorage.removeItem("lv4:otp-return");
+        setGateMode("signin");
+        setMagicReturnId(pendingId);
+        void discardSupabaseSession();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const feed = useFeed();
   const [flash, setFlash] = useState(false);
   const seenFeedId = useRef<string | null>(null);
@@ -627,6 +645,7 @@ function Portal() {
       <Login
         users={users}
         initialMode={gateMode === "signup" ? "signup" : "signin"}
+        magicReturnId={magicReturnId}
         onLogin={onLogin}
         logLoginEvent={pushLogin}
         onSignup={signup}

@@ -234,7 +234,7 @@ export default function Landing({ stats, onEnter }: Props) {
               { t: "land.hw4t", d: "land.hw4d" },
             ].map((step, i) => (
               <Reveal key={step.t} delay={i * 110}>
-                <div className="group relative h-full rounded-t-[14px] rounded-b-lg border border-navyline/60 bg-paper/[0.045] hover:bg-paper/[0.09] transition-colors px-5 pt-7 pb-6 overflow-hidden">
+                <div className="group relative h-full rounded-t-[14px] rounded-b-lg border border-navyline/60 bg-[rgba(243,233,210,0.05)] hover:bg-[rgba(243,233,210,0.09)] transition-colors px-5 pt-7 pb-6 overflow-hidden">
                   {/* manila tab */}
                   <span className="absolute -top-px left-5 w-16 h-3 rounded-b-lg bg-brass/80 group-hover:h-4 transition-all" aria-hidden="true" />
                   <p className="font-display italic font-semibold text-[30px] text-[#e5b768]/80 leading-none">{i + 1}</p>

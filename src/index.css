@@ -117,6 +117,32 @@
 [data-theme="dark"] .accent-navy { accent-color: #cfe0f2 !important; }
 [data-theme="dark"] .accent-crimson { accent-color: #d0503f !important; }
 
+/* "paper" text/borders only ever sit on always-dark surfaces (navy bands,
+   crimson buttons, the dark gateway) — in dark mode they must hold ivory
+   instead of flipping to the page background colour */
+[data-theme="dark"] .text-paper { color: #f3e9d2 !important; }
+[data-theme="dark"] .text-paper\/35 { color: rgba(243, 233, 210, 0.35) !important; }
+[data-theme="dark"] .text-paper\/40 { color: rgba(243, 233, 210, 0.4) !important; }
+[data-theme="dark"] .text-paper\/45 { color: rgba(243, 233, 210, 0.45) !important; }
+[data-theme="dark"] .text-paper\/50 { color: rgba(243, 233, 210, 0.5) !important; }
+[data-theme="dark"] .text-paper\/55 { color: rgba(243, 233, 210, 0.55) !important; }
+[data-theme="dark"] .text-paper\/60 { color: rgba(243, 233, 210, 0.6) !important; }
+[data-theme="dark"] .text-paper\/65 { color: rgba(243, 233, 210, 0.65) !important; }
+[data-theme="dark"] .text-paper\/70 { color: rgba(243, 233, 210, 0.7) !important; }
+[data-theme="dark"] .text-paper\/80 { color: rgba(243, 233, 210, 0.8) !important; }
+[data-theme="dark"] .text-paper\/85 { color: rgba(243, 233, 210, 0.85) !important; }
+[data-theme="dark"] .text-paper\/90 { color: rgba(243, 233, 210, 0.9) !important; }
+[data-theme="dark"] .\!text-paper\/70 { color: rgba(243, 233, 210, 0.7) !important; }
+[data-theme="dark"] .hover\:text-paper:hover { color: #f3e9d2 !important; }
+[data-theme="dark"] .hover\:text-paper\/80:hover { color: rgba(243, 233, 210, 0.8) !important; }
+[data-theme="dark"] .placeholder\:text-paper\/35::placeholder { color: rgba(243, 233, 210, 0.35) !important; }
+[data-theme="dark"] .border-paper { border-color: rgba(243, 233, 210, 0.9) !important; }
+[data-theme="dark"] .border-paper\/25 { border-color: rgba(243, 233, 210, 0.25) !important; }
+[data-theme="dark"] .border-paper\/40 { border-color: rgba(243, 233, 210, 0.4) !important; }
+[data-theme="dark"] .hover\:border-paper\/40:hover { border-color: rgba(243, 233, 210, 0.4) !important; }
+[data-theme="dark"] .hover\:\!border-paper\/40:hover { border-color: rgba(243, 233, 210, 0.4) !important; }
+[data-theme="dark"] .hover\:bg-paper\/10:hover { background-color: rgba(243, 233, 210, 0.1) !important; }
+
 /* native dropdown options must stay legible in every theme */
 select option,
 select optgroup {

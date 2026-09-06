@@ -17,7 +17,21 @@ export interface User {
   status: "ACTIVE" | "SUSPENDED";
   clearanceNote: string;
   passHash: string;
+  /* factor 3 — secret question; answer stored only as a digest */
+  secQuestion: string;
+  secAnswerHash: string;
+  phone?: string;
+  personCode?: string;
 }
+
+/* secret-question bank (factor 3) — en + hi, other languages fall back via [lang] */
+export const SEC_QUESTIONS: { en: string; hi: string; [k: string]: string }[] = [
+  { en: "What is your mother's maiden name?", hi: "आपकी माता का मायके का नाम क्या है?" },
+  { en: "What is the name of your first school?", hi: "आपके पहले विद्यालय का नाम क्या है?" },
+  { en: "What is your native village or hometown?", hi: "आपका मूल गाँव या गृहनगर क्या है?" },
+  { en: "What is your favourite festival?", hi: "आपका प्रिय त्योहार कौन-सा है?" },
+  { en: "What was the name of your first pet?", hi: "आपके पहले पालतू जानवर का नाम क्या था?" },
+];
 
 export interface Court {
   id: string;

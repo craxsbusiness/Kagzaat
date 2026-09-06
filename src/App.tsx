@@ -6,7 +6,8 @@ import {
   COURTS as COURTS_SEED, ROLE_BANNER, ROLE_LABEL, SEED_AUDIT, SEED_CASES, SEED_DOCUMENTS, SEED_EVIDENCE,
   SEED_LOGINS, SEED_NOTICES, SEED_SECURITY, USERS, canDownload, canSeeCase, canSeeDoc, canUpload, keyFingerprint,
 } from "./data";
-import { hashPassword } from "./lib";
+import { hashPassword, hashSecret } from "./lib";
+import { isSupabaseConfigured, sendPersonCodeEmail } from "./supabase";
 import { Btn, Chip, ToastProvider, useFeed, useToast } from "./ui";
 import { PrefsProvider, usePrefs, useT } from "./i18n";
 import {
@@ -419,42 +420,63 @@ function Portal() {
     toast("success", "Case registered", `${id} minted · immutable from this point.`);
   };
 
+  const mintPersonCode = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const blk = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+    return `LVC-${blk()}-${blk()}`;
+  };
+
+  const dispatchPersonCode = (nu: User) => {
+    if (!nu.personCode) return;
+    if (isSupabaseConfigured()) {
+      void sendPersonCodeEmail({ to: nu.email, phone: nu.phone, name: nu.name, personCode: nu.personCode }).then((sent) => {
+        if (sent) toast("success", "Person code emailed", `${nu.email}`);
+      });
+    }
+  };
+
   const createUser: Parameters<typeof AdminPanel>[0]["onCreateUser"] = (pp) => {
     if (!user) return;
     const nu: User = {
       id: uid("USR"), name: pp.name, role: pp.role, unit: pp.unit,
       courtIds: pp.role === "JUDGE" ? pp.courtIds : pp.role === "ADMIN" || pp.role === "AUDITOR" ? courts.map((x) => x.id) : [],
       stationId: pp.role === "POLICE" ? pp.stationId : undefined,
-      email: pp.email, keyFp: keyFingerprint(), status: "ACTIVE",
+      email: pp.email, phone: pp.phone || undefined, keyFp: keyFingerprint(), status: "ACTIVE",
       clearanceNote:
         pp.role === "JUDGE" ? "Assigned court docket" : pp.role === "LAWYER" ? "Cases on record as counsel" :
         pp.role === "POLICE" ? "Assigned investigations only" : pp.role === "ACCUSED" || pp.role === "VICTIM" ? "Own cases · permitted docs only" :
         pp.role === "ADMIN" ? "System administration" : "Read-only audit & security",
       passHash: hashPassword(pp.password),
+      secQuestion: pp.secQuestion,
+      secAnswerHash: hashSecret(pp.secAnswer),
+      personCode: mintPersonCode(),
     };
     setUsers((prev) => [...prev, nu]);
-    log("USER_CREATED", { detail: `${pp.name} provisioned as ${ROLE_LABEL[pp.role]} (${nu.id}) · 3-factor sign-in enforced` });
-    toast("success", "Principal provisioned", `${nu.id} · share the initial password in person.`);
+    log("USER_CREATED", { detail: `${pp.name} provisioned as ${ROLE_LABEL[pp.role]} (${nu.id}) · person code ${nu.personCode} issued` });
+    dispatchPersonCode(nu);
+    toast("success", "Principal provisioned", `${nu.id} · person code ${nu.personCode}${isSupabaseConfigured() ? " · emailed" : ""}`);
   };
 
   /* ---------------- signup · public self-registration + founding registrar ---------------- */
-  const signup: (sp: { name: string; role: RoleId; email: string; password: string; courtIds: string[]; stationId: string }) => boolean = (sp) => {
+  const signup: (sp: { name: string; role: RoleId; email: string; phone: string; password: string; secQuestion: string; secAnswer: string }) => string | null = (sp) => {
     const first = users.length === 0;
     const role: RoleId = first ? "ADMIN" : sp.role;
 
     if (!first && users.some((x) => x.email.toLowerCase() === sp.email.toLowerCase())) {
       log("USER_CREATED", { detail: `Signup rejected — email already registered (${sp.email})`, actor: sp.name, role: ROLE_LABEL[role] });
-      return false;
+      return null;
     }
 
+    const personCode = mintPersonCode();
     const nu: User = {
       id: uid("USR"),
       name: sp.name,
       role,
       unit: first ? "Court Registry" : ROLE_LABEL[role],
-      courtIds: first ? [] : role === "ADMIN" || role === "AUDITOR" ? courts.map((x) => x.id) : role === "JUDGE" ? sp.courtIds : [],
-      stationId: role === "POLICE" && sp.stationId ? sp.stationId.toUpperCase() : undefined,
+      courtIds: first ? [] : role === "ADMIN" || role === "AUDITOR" ? courts.map((x) => x.id) : [],
+      stationId: undefined,
       email: sp.email,
+      phone: sp.phone || undefined,
       keyFp: keyFingerprint(),
       status: "ACTIVE",
       clearanceNote: first
@@ -466,22 +488,24 @@ function Portal() {
         : role === "ADMIN" ? "System administration"
         : "Read-only audit & security",
       passHash: hashPassword(sp.password),
+      secQuestion: sp.secQuestion,
+      secAnswerHash: hashSecret(sp.secAnswer),
+      personCode,
     };
     setUsers((prev) => [...prev, nu]);
+    dispatchPersonCode(nu);
 
     if (first) {
       log("REGISTRY_PROVISIONED", {
-        detail: `Founding registrar ${sp.name} (${nu.id}) provisioned — the registry's first permanent entry · 3-factor sign-in enforced`,
+        detail: `Founding registrar ${sp.name} (${nu.id}) provisioned — the registry's first permanent entry · person code ${personCode} issued`,
         actor: sp.name,
         role: ROLE_LABEL.ADMIN,
       });
-      toast("success", "Registry provisioned", `${nu.id} · you are the founding Court Administrator. Sign in to begin.`);
     } else {
-      log("USER_CREATED", { detail: `${sp.name} self-registered as ${ROLE_LABEL[role]} (${nu.id}) · 3-factor sign-in enforced`, actor: sp.name, role: ROLE_LABEL[role] });
-      notify(nu.id, "SYSTEM", `Welcome ${sp.name}. Your account is ready — case files appear once the registry links you as a party.`);
-      toast("success", "Account created", `${nu.id} · now sign in with your password.`);
+      log("USER_CREATED", { detail: `${sp.name} self-registered as ${ROLE_LABEL[role]} (${nu.id}) · phone ${sp.phone} · person code ${personCode} issued`, actor: sp.name, role: ROLE_LABEL[role] });
+      notify(nu.id, "SYSTEM", `Welcome ${sp.name}. Your person code is ${personCode}. Case files appear once the registry links you as a party.`);
     }
-    return true;
+    return personCode;
   };
 
   const addCourt = (pp: { name: string; level: string; location: string }) => {

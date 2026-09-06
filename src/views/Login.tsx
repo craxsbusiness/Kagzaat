@@ -1,17 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import type { LoginEvent, RoleId, User } from "../data";
-import { ROLE_BANNER } from "../data";
-import { deviceInfo, hashPassword, useReducedMotion } from "../lib";
-import { Btn, useToast } from "../ui";
+import { ROLE_BANNER, ROLE_LABEL, SEC_QUESTIONS } from "../data";
+import { deviceInfo, hashPassword, hashSecret } from "../lib";
+import { isSupabaseConfigured, sendOtpEmail, verifyEmailOtp } from "../supabase";
+import { Btn, useCopy, useToast } from "../ui";
 import { usePrefs, useT } from "../i18n";
-import { IcCheck, IcChevD, IcFinger, IcKey, IcLock, IcShield, IcUser, IcX } from "../icons";
+import { IcCheck, IcChevD, IcCopy, IcKey, IcLock, IcShield, IcUser, IcX } from "../icons";
 
 interface Props {
   users: User[];
   initialMode?: "signin" | "signup";
   onLogin: (userId: string, device: string, ip: string) => void;
   logLoginEvent: (ev: Omit<LoginEvent, "id" | "ts">) => void;
-  onSignup: (p: { name: string; role: RoleId; email: string; password: string; courtIds: string[]; stationId: string }) => boolean;
+  /** returns the new person code, or null if the email is already registered */
+  onSignup: (p: { name: string; role: RoleId; email: string; phone: string; password: string; secQuestion: string; secAnswer: string }) => string | null;
   pushSecurity?: (severity: "INFO" | "WARN" | "CRITICAL", kind: string, detail: string, userId?: string) => void;
   onBackToLanding?: () => void;
   notice?: string | null;
@@ -32,152 +34,14 @@ const TONE_BG: Record<string, string> = {
 const field = "w-full bg-navy2/60 border border-navyline px-3 py-2.5 text-[14px] text-paper placeholder:text-paper/35 focus:outline-none focus:border-[#e0b968] transition-colors";
 const label = "font-mono text-[9.5px] uppercase tracking-[0.18em] text-paper/55 block mb-1.5";
 
+const PHONE_RE = /^[+]?[\d\s\-()]{8,17}$/;
+
 export default function Login(p: Props) {
   return <Gateway {...p} />;
 }
 
 /* ================================================================== */
-/* Fingerprint sensor (factor 3)                                       */
-/* ================================================================== */
-function FingerprintGlyph({ tone }: { tone: "idle" | "scanning" | "done" }) {
-  return (
-    <svg
-      viewBox="0 0 120 120"
-      className={`w-full h-full transition-colors duration-500 ${tone === "done" ? "text-green2" : tone === "scanning" ? "text-[#e0b968]" : "text-paper/60"}`}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="3.2"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <path d="M20 76 A40 40 0 0 1 100 76" strokeDasharray="54 10 32 9" />
-      <path d="M28 80 A32 32 0 0 1 92 80" strokeDasharray="42 9 26 7" />
-      <path d="M36 84 A24 24 0 0 1 84 84" strokeDasharray="31 8 19 6" />
-      <path d="M44 87 A16 16 0 0 1 76 87" strokeDasharray="21 7" />
-      <path d="M52 89 A8 8 0 0 1 68 89" />
-      <path d="M20 91 C33 99 50 102 60 102 C70 102 87 99 100 91" strokeDasharray="27 8 31 9" opacity="0.85" />
-      <path d="M31 99 C42 105 52 107 60 107 C68 107 78 105 89 99" strokeDasharray="18 6 23 7" opacity="0.6" />
-      <path d="M60 36 A22 22 0 0 1 82 58" opacity="0.65" />
-      <path d="M60 27 A31 31 0 0 1 91 58" opacity="0.45" />
-      <path d="M60 45 A13 13 0 0 1 73 58" opacity="0.9" />
-      <path d="M29 58 A31 31 0 0 1 44 32" opacity="0.45" />
-    </svg>
-  );
-}
-
-function BiometricStep({ userName, onMatch }: { userName: string; onMatch: (score: string) => void }) {
-  const t = useT();
-  const reduced = useReducedMotion();
-  const [phase, setPhase] = useState<"idle" | "scanning" | "done">("idle");
-  const [released, setReleased] = useState(false);
-  const [score] = useState(() => (98.6 + Math.random() * 1.3).toFixed(1));
-  const timer = useRef<number | null>(null);
-  const doneTimer = useRef<number | null>(null);
-
-  useEffect(
-    () => () => {
-      if (timer.current) window.clearTimeout(timer.current);
-      if (doneTimer.current) window.clearTimeout(doneTimer.current);
-    },
-    []
-  );
-
-  const start = () => {
-    if (phase !== "idle") return;
-    setReleased(false);
-    setPhase("scanning");
-    timer.current = window.setTimeout(() => {
-      setPhase("done");
-      doneTimer.current = window.setTimeout(() => onMatch(score), reduced ? 200 : 750);
-    }, reduced ? 300 : 1800);
-  };
-  const cancel = () => {
-    if (phase !== "scanning") return;
-    if (timer.current) window.clearTimeout(timer.current);
-    setPhase("idle");
-    setReleased(true);
-  };
-
-  return (
-    <>
-      <style>{`
-        @keyframes bioscan{0%{top:8%;opacity:0}12%{opacity:1}88%{opacity:1}100%{top:88%;opacity:0}}
-        @keyframes biofill{from{width:6%}to{width:100%}}
-        @keyframes bioring{0%{box-shadow:0 0 0 0 rgba(85,145,106,.55)}100%{box-shadow:0 0 0 16px rgba(85,145,106,0)}}
-      `}</style>
-      <header className="px-7 pt-4 pb-2">
-        <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e0b968]">{t("login.bioKicker")}</p>
-        <h2 className="font-display font-semibold uppercase tracking-wide text-[22px] mt-1">{t("login.bioTitle")}</h2>
-        <p className="text-[12.5px] text-paper/55 mt-1.5">
-          {t("login.bioSub")} <span className="text-paper/80 font-semibold">{userName}</span>
-        </p>
-      </header>
-
-      <div className="px-7 pb-5 flex flex-col items-center">
-        <button
-          type="button"
-          onPointerDown={start}
-          onPointerUp={cancel}
-          onPointerLeave={cancel}
-          onKeyDown={(e) => {
-            if ((e.key === "Enter" || e.key === " ") && phase === "idle") {
-              e.preventDefault();
-              start();
-            }
-          }}
-          aria-label={t("login.bioHold")}
-          className={`relative w-44 h-44 rounded-full border-2 overflow-hidden select-none transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e0b968] ${
-            phase === "done"
-              ? "border-green2 bg-green/10"
-              : phase === "scanning"
-              ? "border-[#e0b968] bg-[#e0b968]/10 scale-[1.03]"
-              : "border-navyline bg-navy2/50 hover:border-paper/40 active:scale-[0.98]"
-          }`}
-          style={phase === "done" ? { animation: "bioring 0.9s ease-out 2" } : undefined}
-        >
-          <div className="absolute inset-4">
-            <FingerprintGlyph tone={phase} />
-          </div>
-          {phase === "scanning" && (
-            <span
-              className="absolute left-[10%] right-[10%] h-[3px] bg-[#e0b968] rounded-full"
-              style={{
-                animation: `bioscan ${reduced ? 0.3 : 1.8}s linear ${reduced ? "1" : "infinite"}`,
-                boxShadow: "0 0 14px 3px rgba(224,185,104,0.55)",
-              }}
-            />
-          )}
-          {phase === "done" && (
-            <span className="absolute inset-0 flex items-center justify-center bg-navy/55 fade-in">
-              <span className="w-14 h-14 rounded-full bg-green2 text-navy flex items-center justify-center stamp-in">
-                <IcCheck c="w-7 h-7" />
-              </span>
-            </span>
-          )}
-        </button>
-
-        {/* progress rail */}
-        <div className="w-44 h-[3px] bg-navyline mt-4 overflow-hidden">
-          {phase === "scanning" && (
-            <span className="block h-full bg-[#e0b968]" style={{ animation: `biofill ${reduced ? 0.3 : 1.8}s linear forwards` }} />
-          )}
-          {phase === "done" && <span className="block h-full w-full bg-green2" />}
-        </div>
-
-        <p className={`font-mono text-[10.5px] uppercase tracking-[0.18em] mt-3 ${phase === "done" ? "text-green2" : phase === "scanning" ? "text-[#e0b968]" : "text-paper/50"}`}>
-          {phase === "done" ? `${t("login.bioOk")} · ${score}%` : phase === "scanning" ? t("login.bioScanning") : t("login.bioHold")}
-        </p>
-        {released && phase === "idle" && <p className="text-[12px] text-[#e0b968] mt-2 fade-in">{t("login.bioCancel")}</p>}
-        <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-paper/35 mt-4 text-center">
-          Verification is completed on your device
-        </p>
-      </div>
-    </>
-  );
-}
-
-/* ================================================================== */
-/* Gateway — always shows Sign in / Create account                     */
+/* Gateway — Sign in / Create account                                  */
 /* ================================================================== */
 function Gateway(p: Props) {
   const t = useT();
@@ -186,8 +50,9 @@ function Gateway(p: Props) {
   const empty = p.users.length === 0;
 
   const [mode, setMode] = useState<"signin" | "signup">(p.initialMode ?? (empty ? "signup" : "signin"));
-  const [step, setStep] = useState<"creds" | "mfa" | "bio">("creds");
+  const [step, setStep] = useState<"creds" | "otp" | "sec">("creds");
   const [pending, setPending] = useState<User | null>(null);
+  const [otpMode, setOtpMode] = useState<"email" | "demo">("demo");
 
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
@@ -195,12 +60,15 @@ function Gateway(p: Props) {
   const [err, setErr] = useState<string | null>(null);
   const [shake, setShake] = useState(0);
   const [fails, setFails] = useState(0);
+  const [secFails, setSecFails] = useState(0);
   const [lockUntil, setLockUntil] = useState<number | null>(null);
   const [pickOpen, setPickOpen] = useState(false);
   const [roleFilter, setRoleFilter] = useState<"ALL" | RoleId>("ALL");
+  const [otpSending, setOtpSending] = useState(false);
 
-  const [mfaCode] = useState(() => String(Math.floor(100000 + Math.random() * 900000)));
-  const [mfaInput, setMfaInput] = useState("");
+  const [demoCode] = useState(() => String(Math.floor(100000 + Math.random() * 900000)));
+  const [otpInput, setOtpInput] = useState("");
+  const [secInput, setSecInput] = useState("");
 
   const device = useMemo(() => deviceInfo(), []);
   const ip = useMemo(() => `10.14.2.${Math.floor(20 + Math.random() * 60)}`, []);
@@ -215,8 +83,16 @@ function Gateway(p: Props) {
     setShake((s) => s + 1);
   };
 
-  /* ---------------- factor 1 · password ---------------- */
-  const submitCreds = () => {
+  const backToCreds = () => {
+    setStep("creds");
+    setPending(null);
+    setOtpInput("");
+    setSecInput("");
+    setErr(null);
+  };
+
+  /* ---------------- step 1 · password ---------------- */
+  const submitCreds = async () => {
     const now = Date.now();
     if (lockUntil && now < lockUntil) {
       fail(`Account locked — retry in ${Math.ceil((lockUntil - now) / 1000)}s`);
@@ -262,30 +138,76 @@ function Gateway(p: Props) {
     }
     setErr(null);
     setPending(u);
-    setStep("mfa");
-    toast("info", "Credentials accepted", "Verification is continuing on the secure channel.");
+
+    /* step 2 · one-time code — real email via Supabase when configured */
+    if (isSupabaseConfigured()) {
+      setOtpSending(true);
+      const r = await sendOtpEmail(u.email);
+      setOtpSending(false);
+      if (r.ok) {
+        setOtpMode("email");
+        toast("info", t("login.otpSent"), u.email);
+      } else {
+        setOtpMode("demo");
+        toast("warning", t("login.otpSendFail"), r.error);
+      }
+    } else {
+      setOtpMode("demo");
+    }
+    setStep("otp");
   };
 
-  /* ---------------- factor 2 · one-time code ---------------- */
-  const submitMfa = () => {
+  /* ---------------- step 2 · one-time code ---------------- */
+  const submitOtp = async () => {
     const u = pending!;
-    if (mfaInput !== mfaCode) {
-      p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_FAIL", device, ip, location: "Gateway", note: "Incorrect one-time code" });
+    if (otpMode === "email") {
+      const r = await verifyEmailOtp(u.email, otpInput);
+      if (!r.ok) {
+        p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_FAIL", device, ip, location: "Gateway", note: `Incorrect one-time code · ${r.error ?? ""}` });
+        setShake((s) => s + 1);
+        setErr("Incorrect one-time code. Ledgered as MFA_FAIL.");
+        return;
+      }
+      p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_OK", device, ip, location: "Gateway", note: "Email one-time code verified via Supabase" });
+    } else {
+      if (otpInput !== demoCode) {
+        p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_FAIL", device, ip, location: "Gateway", note: "Incorrect one-time code (demo channel)" });
+        setShake((s) => s + 1);
+        setErr("Incorrect one-time code. Ledgered as MFA_FAIL.");
+        return;
+      }
+      p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_OK", device, ip, location: "Gateway", note: "One-time code accepted (demo channel)" });
+    }
+    setErr(null);
+    setOtpInput("");
+    if (u.secQuestion && u.secAnswerHash) {
+      setStep("sec");
+    } else {
+      p.onLogin(u.id, device, ip);
+    }
+  };
+
+  /* ---------------- step 3 · secret answer ---------------- */
+  const submitSec = () => {
+    const u = pending!;
+    if (hashSecret(secInput) !== u.secAnswerHash) {
+      const next = secFails + 1;
+      setSecFails(next);
+      p.logLoginEvent({ userId: u.id, userName: u.name, kind: "FA3_FAIL", device, ip, location: "Gateway", note: `Incorrect security answer · attempt ${next} of 3` });
       setShake((s) => s + 1);
-      setErr("Incorrect one-time code. Ledgered as MFA_FAIL.");
+      if (next >= 3) {
+        setLockUntil(Date.now() + 30000);
+        p.logLoginEvent({ userId: u.id, userName: u.name, kind: "LOCKOUT", device, ip, location: "Gateway", note: "3 failed security answers — lockout applied" });
+        p.pushSecurity?.("WARN", "FA3_BRUTE", `3 failed security answers for ${u.id} from ${ip}`, u.id);
+        setSecFails(0);
+        backToCreds();
+        fail(t("login.secLock"));
+      } else {
+        setErr(`${t("login.secWrong")} (${next}/3)`);
+      }
       return;
     }
-    p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_OK", device, ip, location: "Gateway", note: "One-time code accepted" });
-    setErr(null);
-    setMfaInput("");
-    setStep("bio");
-    toast("info", "Code accepted", "One more verification remains before entry.");
-  };
-
-  /* ---------------- factor 3 · fingerprint ---------------- */
-  const onBioMatch = (score: string) => {
-    const u = pending!;
-    p.logLoginEvent({ userId: u.id, userName: u.name, kind: "FA3_OK", device, ip, location: "Gateway", note: `Fingerprint verified · match score ${score}%` });
+    p.logLoginEvent({ userId: u.id, userName: u.name, kind: "FA3_OK", device, ip, location: "Gateway", note: "Security answer verified" });
     p.onLogin(u.id, device, ip);
   };
 
@@ -358,7 +280,7 @@ function Gateway(p: Props) {
 
           <div key={shake} className={`bg-navy/80 border border-navyline rounded-xl backdrop-blur-sm shadow-2xl shadow-black/40 ${shake ? "shake-x" : ""}`}>
             {/* LOGIN / SIGNUP — always visible */}
-            <div className="grid grid-cols-2 border-b border-navyline rounded-t-[inherit]" role="tablist" aria-label="Authentication mode">
+            <div className="grid grid-cols-2 border-b border-navyline" role="tablist" aria-label="Authentication mode">
               <button
                 role="tab"
                 aria-selected={mode === "signin"}
@@ -388,9 +310,7 @@ function Gateway(p: Props) {
                 onCreated={(email) => {
                   setMode("signin");
                   setUserId(email);
-                  setStep("creds");
-                  setErr(null);
-                  setPending(null);
+                  backToCreds();
                 }}
               />
             ) : (
@@ -401,7 +321,7 @@ function Gateway(p: Props) {
                       <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e0b968]">{t("login.step")}</p>
                       <h2 className="font-display font-semibold uppercase tracking-wide text-[22px] mt-1">{t("login.title")}</h2>
                     </header>
-                    <form className="px-7 pb-4 space-y-4" onSubmit={(e) => { e.preventDefault(); submitCreds(); }}>
+                    <form className="px-7 pb-4 space-y-4" onSubmit={(e) => { e.preventDefault(); void submitCreds(); }}>
                       <div>
                         <label className={label}>{t("login.id")}</label>
                         <div className="relative">
@@ -420,7 +340,9 @@ function Gateway(p: Props) {
                         </div>
                       </div>
                       {err && <p className="text-[12.5px] text-[#f0a48f] border-l-2 border-crimson pl-3">{err}</p>}
-                      <Btn type="submit" disabled={empty} className="w-full !py-3 !text-[13px]"><IcKey c="w-4 h-4" /> {t("login.continue")}</Btn>
+                      <Btn type="submit" disabled={empty || otpSending} className="w-full !py-3 !text-[13px]">
+                        <IcKey c="w-4 h-4" /> {otpSending ? "…" : t("login.continue")}
+                      </Btn>
                     </form>
 
                     <footer className="px-7 pb-5">
@@ -431,7 +353,6 @@ function Gateway(p: Props) {
                         </div>
                       ) : (
                         <>
-                          {/* role filter + principal picker */}
                           <div className="flex items-center gap-2 mb-1.5">
                             <label className="font-mono uppercase tracking-[0.14em] text-[9.5px] text-paper/50 shrink-0" htmlFor="roleFilter">{t("login.roleLbl")}</label>
                             <select
@@ -480,37 +401,72 @@ function Gateway(p: Props) {
                   </>
                 )}
 
-                {step === "mfa" && (
+                {step === "otp" && (
                   <>
                     <header className="px-7 pt-4 pb-3">
                       <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e0b968]">{t("login.step")}</p>
                       <h2 className="font-display font-semibold uppercase tracking-wide text-[22px] mt-1">{t("login.mfaTitle")}</h2>
                       <p className="text-[12.5px] text-paper/55 mt-1.5">{t("login.mfaSub")}</p>
                     </header>
-                    <form className="px-7 pb-5 space-y-4" onSubmit={(e) => { e.preventDefault(); submitMfa(); }}>
+                    <form className="px-7 pb-5 space-y-4" onSubmit={(e) => { e.preventDefault(); void submitOtp(); }}>
                       <input
                         className="w-full bg-navy2/60 border border-navyline px-3 py-3 text-center font-mono text-[26px] tracking-[0.5em] text-paper focus:outline-none focus:border-[#e0b968] transition-colors"
-                        value={mfaInput}
-                        onChange={(e) => setMfaInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        value={otpInput}
+                        onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
                         placeholder="······"
                         inputMode="numeric"
                         autoFocus
                         aria-label={t("login.mfaTitle")}
                       />
-                      <div className="border border-dashed border-navyline bg-navy2/40 px-3 py-2 flex items-center justify-between">
-                        <span className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-paper/50">{t("login.demoCode")}</span>
-                        <span className="font-mono text-[15px] font-bold text-green2 tracking-[0.3em]">{mfaCode}</span>
-                      </div>
+                      {otpMode === "demo" && (
+                        <div className="border border-dashed border-navyline bg-navy2/40 px-3 py-2 flex items-center justify-between">
+                          <span className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-paper/50">{t("login.demoCode")}</span>
+                          <span className="font-mono text-[15px] font-bold text-green2 tracking-[0.3em]">{demoCode}</span>
+                        </div>
+                      )}
+                      {otpMode === "email" && (
+                        <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-green2 flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green2 pulse-dot" /> {t("login.otpSent")} · {pending?.email}
+                        </p>
+                      )}
                       {err && <p className="text-[12.5px] text-[#f0a48f] border-l-2 border-crimson pl-3">{err}</p>}
                       <div className="flex gap-2">
-                        <Btn kind="ghost" onClick={() => { setStep("creds"); setMfaInput(""); setErr(null); }} className="!text-paper/70 !border-navyline hover:!border-paper/40">{t("act.back")}</Btn>
-                        <Btn type="submit" disabled={mfaInput.length !== 6} className="flex-1"><IcLock c="w-4 h-4" /> {t("login.verify")}</Btn>
+                        <Btn kind="ghost" onClick={backToCreds} className="!text-paper/70 !border-navyline hover:!border-paper/40">{t("act.back")}</Btn>
+                        <Btn type="submit" disabled={otpInput.length !== 6} className="flex-1"><IcLock c="w-4 h-4" /> {t("login.verify")}</Btn>
                       </div>
                     </form>
                   </>
                 )}
 
-                {step === "bio" && pending && <BiometricStep userName={pending.name} onMatch={onBioMatch} />}
+                {step === "sec" && pending && (
+                  <>
+                    <header className="px-7 pt-4 pb-3">
+                      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e0b968]">{t("login.step")}</p>
+                      <h2 className="font-display font-semibold uppercase tracking-wide text-[22px] mt-1">{t("login.secTitle")}</h2>
+                      <p className="text-[12.5px] text-paper/55 mt-1.5">{t("login.secSub")}</p>
+                    </header>
+                    <form className="px-7 pb-5 space-y-4" onSubmit={(e) => { e.preventDefault(); submitSec(); }}>
+                      <div className="border border-navyline bg-navy2/40 px-4 py-3">
+                        <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-paper/45 mb-1">{t("login.secTitle")}</p>
+                        <p className="text-[14.5px] font-semibold leading-snug">{pending.secQuestion}</p>
+                      </div>
+                      <input
+                        className={field}
+                        type="password"
+                        value={secInput}
+                        onChange={(e) => setSecInput(e.target.value)}
+                        placeholder={t("login.secPh")}
+                        autoFocus
+                      />
+                      {err && <p className="text-[12.5px] text-[#f0a48f] border-l-2 border-crimson pl-3">{err}</p>}
+                      <div className="flex gap-2">
+                        <Btn kind="ghost" onClick={() => { setStep("otp"); setSecInput(""); setErr(null); }} className="!text-paper/70 !border-navyline hover:!border-paper/40">{t("act.back")}</Btn>
+                        <Btn type="submit" disabled={secInput.trim().length < 1} className="flex-1"><IcShield c="w-4 h-4" /> {t("login.verify")}</Btn>
+                      </div>
+                      <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-paper/35 text-center">{t("signup.ansHint")}</p>
+                    </form>
+                  </>
+                )}
 
                 <footer className="px-7 py-3.5 flex items-center gap-2 justify-center border-t border-navyline">
                   <span className="w-1.5 h-1.5 bg-green2 pulse-dot" />
@@ -525,7 +481,7 @@ function Gateway(p: Props) {
               onClick={p.onBackToLanding}
               className="mt-4 mx-auto flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-paper/45 hover:text-paper transition-colors"
             >
-              ← {lang === "hi" ? "मुख्य पृष्ठ पर लौटें" : "Back to landing page"}
+              <IcChevD c="w-3 h-3 rotate-90" /> {lang === "hi" ? "मुख पृष्ठ पर वापस" : "Back to landing page"}
             </button>
           )}
         </div>
@@ -535,36 +491,89 @@ function Gateway(p: Props) {
 }
 
 /* ================================================================== */
-/* Create account — role dropdown · founding registrar when empty      */
+/* Create account — role dropdown, phone, secret question, person code */
 /* ================================================================== */
 function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreated: (email: string) => void }) {
   const t = useT();
+  const { lang } = usePrefs();
+  const toast = useToast();
+  const { copied, copy } = useCopy();
   const [name, setName] = useState("");
   const [role, setRole] = useState<RoleId>(empty ? "ADMIN" : "VICTIM");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
-  const [stationId, setStationId] = useState("");
+  const [qIdx, setQIdx] = useState(0);
+  const [qCustom, setQCustom] = useState(false);
+  const [qText, setQText] = useState("");
+  const [ans, setAns] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [shake, setShake] = useState(0);
+  const [personCode, setPersonCode] = useState<string | null>(null);
 
   const okPw = pw.length >= 8;
-  const valid = name.trim().length >= 3 && email.includes("@") && okPw && pw === pw2 && (role !== "POLICE" || stationId.trim().length > 1);
+  const okPhone = PHONE_RE.test(phone.trim());
+  const okQ = !qCustom || qText.trim().length >= 6;
+  const valid =
+    name.trim().length >= 3 && email.includes("@") && okPw && pw === pw2 && okPhone && okQ &&
+    ans.trim().length >= 2 && (role !== "POLICE" || true);
 
   const submit = () => {
     if (!valid) {
-      setErr(!okPw ? "Password must be at least 8 characters." : pw !== pw2 ? "Passwords do not match." : "Complete all fields.");
+      setErr(!okPw ? "Password must be at least 8 characters." : pw !== pw2 ? "Passwords do not match." : !okPhone ? t("signup.phoneBad") : !okQ ? "Write your custom question." : "Complete all fields.");
       setShake((s) => s + 1);
       return;
     }
-    const ok = p.onSignup({ name: name.trim(), role, email: email.trim(), password: pw, courtIds: [], stationId: stationId.trim() });
-    if (!ok) {
+    const code = p.onSignup({
+      name: name.trim(),
+      role,
+      email: email.trim(),
+      phone: phone.trim(),
+      password: pw,
+      secQuestion: qCustom ? qText.trim() : SEC_QUESTIONS[qIdx][lang],
+      secAnswer: ans,
+    });
+    if (code === null) {
       setErr(t("signup.dupe"));
       setShake((s) => s + 1);
       return;
     }
-    onCreated(email.trim());
+    setPersonCode(code);
+    toast("success", t("signup.codeTitle"), code);
   };
+
+  /* -------- person-code reveal -------- */
+  if (personCode) {
+    return (
+      <div className="px-7 py-7 text-center">
+        <span className="inline-flex w-12 h-12 rounded-full bg-green/15 border border-green2/50 text-green2 items-center justify-center stamp-in">
+          <IcCheck c="w-6 h-6" />
+        </span>
+        <h2 className="font-display font-semibold uppercase tracking-wide text-[21px] mt-4">{t("signup.codeTitle")}</h2>
+        <p className="text-[12.5px] text-paper/60 leading-relaxed mt-2 max-w-xs mx-auto">{t("signup.codeBody")}</p>
+        <div className="mt-5 flex items-center justify-center gap-2">
+          <p className="font-mono text-[26px] font-bold tracking-[0.22em] text-[#e0b968] bg-navy2/70 border border-navyline px-5 py-3 rounded-lg select-all">
+            {personCode}
+          </p>
+          <button
+            onClick={() => copy(personCode, "code")}
+            className="w-11 h-11 rounded-lg border border-navyline text-paper/60 hover:text-paper hover:border-paper/40 transition-colors flex items-center justify-center"
+            aria-label="Copy person code"
+            title="Copy"
+          >
+            {copied === "code" ? <IcCheck c="w-4 h-4 text-green2" /> : <IcCopy c="w-4 h-4" />}
+          </button>
+        </div>
+        <p className={`font-mono text-[9.5px] uppercase tracking-[0.16em] mt-4 ${isSupabaseConfigured() ? "text-green2" : "text-amber2"}`}>
+          {isSupabaseConfigured() ? t("signup.codeEmailed") : t("signup.codeNotEmailed")}
+        </p>
+        <Btn kind="green" className="mt-6 w-full !py-3" onClick={() => onCreated(email.trim())}>
+          {t("signup.codeProceed")}
+        </Btn>
+      </div>
+    );
+  }
 
   return (
     <div key={shake} className={shake ? "shake-x" : ""}>
@@ -595,20 +604,20 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
           </div>
           {empty && <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-amber2 mt-1.5">{t("signup.foundingNote")}</p>}
         </div>
-        <div>
-          <label className={label}>{t("firstrun.name")}</label>
-          <input className={field} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("signup.namePh")} />
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className={label}>{t("firstrun.name")}</label>
+            <input className={field} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("signup.namePh")} />
+          </div>
+          <div>
+            <label className={label}>{t("signup.phone")}</label>
+            <input className={field} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t("signup.phonePh")} />
+          </div>
         </div>
         <div>
           <label className={label}>{t("firstrun.email")}</label>
           <input className={field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("signup.emailPh")} />
         </div>
-        {role === "POLICE" && !empty && (
-          <div>
-            <label className={label}>{t("signup.stationLbl")}</label>
-            <input className={field} value={stationId} onChange={(e) => setStationId(e.target.value)} placeholder="PS-…" />
-          </div>
-        )}
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className={label}>{t("firstrun.pw")}</label>
@@ -619,7 +628,22 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
             <input className={field} type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} placeholder="••••••••" />
           </div>
         </div>
-        {err && <p className="text-[12.5px] text-[#e5a09a] border-l-2 border-crimson pl-3">{err}</p>}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className={label}>{t("firstrun.secQ")}</label>
+            <select className={`${field} !bg-navy2/90 cursor-pointer`} value={qCustom ? "custom" : String(qIdx)} onChange={(e) => { if (e.target.value === "custom") setQCustom(true); else { setQCustom(false); setQIdx(Number(e.target.value)); } }}>
+              {SEC_QUESTIONS.map((qq, i) => <option key={i} value={i}>{qq[lang]}</option>)}
+              <option value="custom">{t("signup.secCustom")}</option>
+            </select>
+            {qCustom && <input className={`${field} mt-2`} value={qText} onChange={(e) => setQText(e.target.value)} placeholder={t("signup.secCustomPh")} />}
+          </div>
+          <div>
+            <label className={label}>{t("firstrun.secA")}</label>
+            <input className={field} type="password" value={ans} onChange={(e) => setAns(e.target.value)} placeholder="••••••" />
+            <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/40 mt-1.5">{t("signup.ansHint")}</p>
+          </div>
+        </div>
+        {err && <p className="text-[12.5px] text-[#f0a48f] border-l-2 border-crimson pl-3">{err}</p>}
         <Btn type="submit" kind="green" disabled={!valid} className="w-full !py-3 !text-[13px]">
           <IcUser c="w-4 h-4" /> {t("signup.submit")}
         </Btn>

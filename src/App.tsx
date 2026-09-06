@@ -8,6 +8,7 @@ import {
 } from "./data";
 import { hashPassword, hashSecret } from "./lib";
 import { isSupabaseConfigured, sendPersonCodeEmail } from "./supabase";
+import { fetchRegistryRows, openRegistryChannel, syncAvailable, upsertRegistryRow, type RegistryRow, type SyncKey } from "./supaSync";
 import { Btn, Chip, ToastProvider, useFeed, useToast } from "./ui";
 import { PrefsProvider, usePrefs, useT } from "./i18n";
 import {
@@ -557,6 +558,61 @@ function Portal() {
     setNav("audit");
   };
 
+  /* ---------------- Supabase realtime registry sync ---------------- */
+  const syncOn = syncAvailable();
+  const lastSynced = useRef<Record<string, string>>({});
+  const [syncState, setSyncState] = useState<"off" | "connecting" | "live">(syncOn ? "connecting" : "off");
+
+  const applyRemoteRow = useCallback((row: RegistryRow) => {
+    const json = JSON.stringify(row.payload);
+    if (lastSynced.current[row.id] === json) return; // echo guard
+    lastSynced.current[row.id] = json;
+    const arr = Array.isArray(row.payload) ? (row.payload as never[]) : [];
+    if (row.id === "users") setUsers(arr as User[]);
+    else if (row.id === "cases") setCases(arr as CaseFile[]);
+    else if (row.id === "docs") setDocs(arr as LegalDoc[]);
+    else if (row.id === "evidence") setEvidence(arr as EvidenceItem[]);
+  }, [setUsers, setCases, setDocs, setEvidence]);
+
+  /* pull the shared registry once on boot */
+  useEffect(() => {
+    if (!syncOn) return;
+    let cancelled = false;
+    void fetchRegistryRows().then((rows) => {
+      if (cancelled) return;
+      rows.forEach((r) => {
+        if (Array.isArray(r.payload) && (r.payload as unknown[]).length > 0) applyRemoteRow(r);
+        else lastSynced.current[r.id] = JSON.stringify(r.payload);
+      });
+      setSyncState("live");
+    });
+    return () => { cancelled = true; };
+  }, [syncOn, applyRemoteRow]);
+
+  /* subscribe for other devices' changes */
+  useEffect(() => {
+    if (!syncOn) return;
+    const close = openRegistryChannel((row) => {
+      applyRemoteRow(row);
+      setSyncState("live");
+    });
+    return close;
+  }, [syncOn, applyRemoteRow]);
+
+  /* push local changes (debounced, echo-guarded) */
+  const pushRow = useCallback((key: SyncKey, data: unknown) => {
+    if (!syncOn) return;
+    const json = JSON.stringify(data);
+    if (lastSynced.current[key] === json) return;
+    lastSynced.current[key] = json;
+    upsertRegistryRow(key, data);
+  }, [syncOn]);
+
+  useEffect(() => { const t = setTimeout(() => pushRow("users", users), 400); return () => clearTimeout(t); }, [users, pushRow]);
+  useEffect(() => { const t = setTimeout(() => pushRow("cases", cases), 400); return () => clearTimeout(t); }, [cases, pushRow]);
+  useEffect(() => { const t = setTimeout(() => pushRow("docs", docs), 400); return () => clearTimeout(t); }, [docs, pushRow]);
+  useEffect(() => { const t = setTimeout(() => pushRow("evidence", evidence), 400); return () => clearTimeout(t); }, [evidence, pushRow]);
+
   /* ---------------- render ---------------- */
   if (!session || !user) {
     if (gateMode === "landing") {
@@ -657,6 +713,19 @@ function Portal() {
               <p className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-paper/40 mt-1.5">{lowToken ? t("hdr.expires") : t("hdr.renews")}</p>
             </div>
           </nav>
+
+          <div className="border-t border-navyline px-5 pt-4 pb-1">
+            <div className={`flex items-center gap-2 border border-navyline rounded-lg px-3 py-2 ${syncState === "live" ? "bg-navy2/50" : "bg-navy2/25"}`}>
+              <span className={`w-2 h-2 rounded-full ${syncState === "live" ? "bg-green2 pulse-dot" : syncState === "connecting" ? "bg-amber2 pulse-dot" : "bg-paper/25"}`} />
+              <div className="min-w-0">
+                <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-paper/50">{t("sync.line")}</p>
+                <p className={`font-mono text-[10px] font-bold uppercase tracking-[0.1em] ${syncState === "live" ? "text-green2" : syncState === "connecting" ? "text-amber2" : "text-paper/45"}`}>
+                  {syncState === "live" ? t("sync.on") : syncState === "connecting" ? t("sync.connecting") : t("sync.off")}
+                </p>
+              </div>
+              <IcChain c="w-3.5 h-3.5 ml-auto text-paper/35" />
+            </div>
+          </div>
 
           <div className="border-t border-navyline px-5 py-4">
             <button onClick={logout} className="w-full flex items-center gap-2.5 border border-navyline px-3 py-2.5 text-paper/70 hover:text-paper hover:border-crimson hover:bg-crimson/10 transition-colors">

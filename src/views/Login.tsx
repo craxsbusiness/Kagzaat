@@ -99,7 +99,7 @@ function Gateway(p: Props) {
       return;
     }
     const needle = userId.trim().toLowerCase();
-    const u = p.users.find((x) => x.id.toLowerCase() === needle || x.email.toLowerCase() === needle);
+    const u = p.users.find((x) => x.id.toLowerCase() === needle || x.email.toLowerCase() === needle || (x.personCode ?? "").toLowerCase() === needle);
     if (!u || hashPassword(password) !== u.passHash) {
       const next = fails + 1;
       setFails(next);
@@ -326,7 +326,7 @@ function Gateway(p: Props) {
                         <label className={label}>{t("login.id")}</label>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-paper/40"><IcUser c="w-4 h-4" /></span>
-                          <input className={`${field} pl-9`} value={userId} onChange={(e) => setUserId(e.target.value)} placeholder="USR-XXXXX / name@court.gov" autoFocus />
+                          <input className={`${field} pl-9`} value={userId} onChange={(e) => setUserId(e.target.value)} placeholder={t("login.idPh")} autoFocus />
                         </div>
                       </div>
                       <div>
@@ -511,13 +511,29 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
   const [err, setErr] = useState<string | null>(null);
   const [shake, setShake] = useState(0);
   const [personCode, setPersonCode] = useState<string | null>(null);
+  const [officialOpen, setOfficialOpen] = useState(false);
+  const [officialCode, setOfficialCode] = useState("");
+  const [unlocked, setUnlocked] = useState(false);
+
+  const tryUnlock = () => {
+    if (officialCode.trim() === "12345") {
+      setUnlocked(true);
+      setOfficialOpen(false);
+      setErr(null);
+      toast("success", t("signup.officialUnlocked"), t("signup.roleLbl"));
+    } else {
+      p.pushSecurity?.("WARN", "OFFICIAL_CODE_FAIL", "Incorrect official access code entered during public registration");
+      setErr(t("signup.officialWrong"));
+      setShake((s) => s + 1);
+    }
+  };
 
   const okPw = pw.length >= 8;
   const okPhone = PHONE_RE.test(phone.trim());
   const okQ = !qCustom || qText.trim().length >= 6;
   const valid =
     name.trim().length >= 3 && email.includes("@") && okPw && pw === pw2 && okPhone && okQ &&
-    ans.trim().length >= 2 && (role !== "POLICE" || true);
+    ans.trim().length >= 2;
 
   const submit = () => {
     if (!valid) {
@@ -587,21 +603,83 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
       <form className="px-7 pb-5 space-y-4" onSubmit={(e) => { e.preventDefault(); submit(); }}>
         <div>
           <label className={label}>{t("signup.roleLbl")}</label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-paper/40"><IcUser c="w-4 h-4" /></span>
-            <select
-              className={`${field} !bg-navy2/90 pl-9 pr-9 appearance-none cursor-pointer`}
-              value={role}
-              disabled={empty}
-              onChange={(e) => setRole(e.target.value as RoleId)}
-              aria-label={t("signup.roleLbl")}
-            >
-              {ALL_ROLES.map((r) => (
-                <option key={r} value={r}>{t(`role.${r}`)}</option>
-              ))}
-            </select>
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-paper/40 pointer-events-none"><IcChevD c="w-3.5 h-3.5" /></span>
-          </div>
+          {empty ? (
+            <div className={`${field} flex items-center gap-2 !py-3 text-paper/80`}>
+              <IcUser c="w-4 h-4 text-[#e0b968]" />
+              <span className="font-display uppercase tracking-[0.1em] text-[13px]">{t("role.ADMIN")}</span>
+            </div>
+          ) : !unlocked ? (
+            <>
+              {/* parties get exactly two choices */}
+              <div className="grid grid-cols-2 gap-3">
+                {(["VICTIM", "ACCUSED"] as const).map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setRole(r)}
+                    aria-pressed={role === r}
+                    className={`relative rounded-lg border px-3 py-3.5 text-left transition-all duration-150 ${
+                      role === r
+                        ? "border-[#e0b968] bg-[#e0b968]/10 shadow-[inset_0_-3px_0_#e0b968]"
+                        : "border-navyline bg-navy2/50 hover:border-paper/40"
+                    }`}
+                  >
+                    <span className={`font-display font-semibold uppercase tracking-[0.1em] text-[14px] block ${role === r ? "text-[#e0b968]" : "text-paper/85"}`}>
+                      {t(`role.${r}`)}
+                    </span>
+                    <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/45 block mt-1">
+                      {r === "VICTIM" ? t("signup.pickVictim") : t("signup.pickAccused")}
+                    </span>
+                    {role === r && (
+                      <span className="absolute top-2 right-2 text-[#e0b968] stamp-in"><IcCheck c="w-3.5 h-3.5" /></span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              {/* officials need the access code */}
+              {!officialOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setOfficialOpen(true)}
+                  className="mt-2 font-mono text-[9.5px] uppercase tracking-[0.16em] text-paper/45 hover:text-[#e0b968] transition-colors"
+                >
+                  {t("signup.officialLink")} →
+                </button>
+              ) : (
+                <div className="mt-2 modal-in border border-navyline rounded-lg bg-navy2/50 p-3">
+                  <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-paper/55 mb-2">{t("signup.officialTitle")}</p>
+                  <div className="flex gap-2">
+                    <input
+                      className={`${field} !py-2 font-mono tracking-[0.2em]`}
+                      type="password"
+                      inputMode="numeric"
+                      value={officialCode}
+                      onChange={(e) => setOfficialCode(e.target.value)}
+                      placeholder={t("signup.officialCodePh")}
+                      aria-label={t("signup.officialTitle")}
+                    />
+                    <Btn kind="navy" onClick={tryUnlock}>{t("act.confirm")}</Btn>
+                  </div>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/40 mt-2 leading-relaxed">{t("signup.officialHint")}</p>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-paper/40"><IcUser c="w-4 h-4" /></span>
+              <select
+                className={`${field} !bg-navy2/90 pl-9 pr-9 appearance-none cursor-pointer`}
+                value={role}
+                onChange={(e) => setRole(e.target.value as RoleId)}
+                aria-label={t("signup.roleLbl")}
+              >
+                {ALL_ROLES.map((r) => (
+                  <option key={r} value={r}>{t(`role.${r}`)}</option>
+                ))}
+              </select>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-paper/40 pointer-events-none"><IcChevD c="w-3.5 h-3.5" /></span>
+            </div>
+          )}
           {empty && <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-amber2 mt-1.5">{t("signup.foundingNote")}</p>}
         </div>
         <div className="grid sm:grid-cols-2 gap-4">

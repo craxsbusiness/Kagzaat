@@ -538,7 +538,7 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
   const toast = useToast();
   const { copied, copy } = useCopy();
   const [name, setName] = useState("");
-  const [role, setRole] = useState<RoleId>(empty ? "ADMIN" : "JUDGE");
+  const [role, setRole] = useState<RoleId>("ADMIN");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [pw, setPw] = useState("");

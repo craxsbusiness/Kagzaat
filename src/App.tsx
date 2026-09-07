@@ -576,7 +576,7 @@ function Portal() {
     setUsers((prev) =>
       prev.map((u) =>
         u.id === userId
-          ? { ...u, totpSecret: secret, recoveryCodesHashed: recoveryCodes.map((c) => c.replace(/-/g, "")) }
+          ? { ...u, totpSecret: secret, recoveryCodesHashed: recoveryCodes.map((c) => `rc$${c.replace(/-/g, "")}`) }
           : u
       )
     );

@@ -412,6 +412,44 @@ function Portal() {
     toast("success", `Case ${kind.toLowerCase()}`, "Record preserved read-only — nothing deleted.");
   };
 
+  /* ---------------- judge privileges: delete case & shut accounts ---------------- */
+  const deleteCase = (caseId: string, reason: string) => {
+    if (!user || user.role !== "JUDGE") return;
+    const c = cases.find((x) => x.id === caseId);
+    if (!c) return;
+    
+    // Only allow deletion if case is dismissed or closed
+    if (c.status !== "DISMISSED" && c.status !== "CLOSED") {
+      toast("error", "Cannot delete active case", "Case must be dismissed or closed before deletion.");
+      return;
+    }
+    
+    setCases((prev) => prev.filter((x) => x.id !== caseId));
+    setDocs((prev) => prev.filter((d) => d.caseId !== caseId));
+    setEvidence((prev) => prev.filter((e) => e.caseId !== caseId));
+    
+    log("CASE_DELETED", { caseId, detail: `Deleted by judge ${user.name} · reason: ${reason}` });
+    [...c.parties.map((pp) => pp.userId), ...c.lawyerIds].forEach((uidX) => notify(uidX, "CASE", `${caseId} has been removed from the registry.`, caseId));
+    toast("success", "Case deleted", "Case and all associated records removed from registry.");
+  };
+
+  const shutAccount = (userId: string, reason: string) => {
+    if (!user || user.role !== "JUDGE") return;
+    const targetUser = users.find((u) => u.id === userId);
+    if (!targetUser) return;
+    
+    // Only allow shutting VICTIM or ACCUSED accounts
+    if (targetUser.role !== "VICTIM" && targetUser.role !== "ACCUSED") {
+      toast("error", "Cannot shut official account", "Only victim and accused accounts can be shut by judge.");
+      return;
+    }
+    
+    setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, status: "SUSPENDED" as const } : u));
+    log("ACCOUNT_SHUT", { detail: `${targetUser.name} (${targetUser.role}) account shut by judge ${user.name} · reason: ${reason}` });
+    notify(userId, "SECURITY", `Your account has been suspended by judicial order. Reason: ${reason}`);
+    toast("success", "Account shut", `${targetUser.name}'s account has been suspended.`);
+  };
+
   const registerCase: Parameters<typeof AdminPanel>[0]["onRegisterCase"] = (pp) => {
     if (!user) return;
     const court = courts.find((x) => x.id === pp.courtId);
@@ -1002,6 +1040,7 @@ function Portal() {
                 deaccessionDoc={deaccessionDoc} viewDoc={viewDoc}
                 addEvidenceEvent={addEvidenceEvent} scheduleHearing={scheduleHearing}
                 initiateTransfer={initiateTransfer} decideTransfer={decideTransfer} closeCase={closeCase}
+                deleteCase={deleteCase} shutAccount={shutAccount}
               />
             )}
             {nav === "search" && <SearchView user={user} users={users} courts={courts} cases={cases} docs={docs} onOpenCase={(id, tab) => { attemptOpen(id); if (tab) setSelTab(tab); }} logSearch={logSearch} />}

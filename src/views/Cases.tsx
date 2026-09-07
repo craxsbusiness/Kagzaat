@@ -48,6 +48,8 @@ export interface CasesProps {
   initiateTransfer: (caseId: string, toCourtId: string, reason: string, orderRef: string) => void;
   decideTransfer: (caseId: string, trfId: string, approve: boolean) => void;
   closeCase: (caseId: string, kind: "CLOSED" | "DISMISSED", reason: string, orderRef: string, signed: boolean) => void;
+  deleteCase?: (caseId: string, reason: string) => void;
+  shutAccount?: (userId: string, reason: string) => void;
 }
 
 let COURTS: Court[] = [];
@@ -204,7 +206,7 @@ function CaseDetail({ p, c }: { p: CasesProps; c: CaseFile }) {
   const t = useT();
   const [tab, setTab] = useState(p.selectedTab || "documents");
   const [drawerDoc, setDrawerDoc] = useState<string | null>(null);
-  const [modal, setModal] = useState<null | "upload" | "transfer" | "close" | "dismiss">(null);
+  const [modal, setModal] = useState<null | "upload" | "transfer" | "close" | "dismiss" | "delete" | "shutAccount">(null);
   const court = COURTS.find((x) => x.id === c.courtId);
   const judge = p.users.find((u) => u.id === c.judgeId);
   const io = p.users.find((u) => u.id === c.ioId);
@@ -269,6 +271,12 @@ function CaseDetail({ p, c }: { p: CasesProps; c: CaseFile }) {
                 <Btn kind="danger" onClick={() => setModal("dismiss")}><IcX c="w-3.5 h-3.5" /> {t("act.dismissCase")}</Btn>
               </>
             )}
+            {p.user.role === "JUDGE" && ro && (c.status === "DISMISSED" || c.status === "CLOSED") && p.deleteCase && (
+              <Btn kind="danger" onClick={() => setModal("delete")}><IcArchive c="w-3.5 h-3.5" /> Delete Case</Btn>
+            )}
+            {p.user.role === "JUDGE" && p.shutAccount && c.parties.some(pp => pp.role === "ACCUSED" || pp.role === "COMPLAINANT") && (
+              <Btn kind="danger" onClick={() => setModal("shutAccount")}><IcLock c="w-3.5 h-3.5" /> Shut Party Account</Btn>
+            )}
             {ro === false && !canUpload(p.user, c) && (p.user.role === "ACCUSED" || p.user.role === "VICTIM") && (
               <span className="font-mono text-[10px] uppercase tracking-widest text-ink3 self-center">{t("cases.parties")}</span>
             )}
@@ -302,6 +310,8 @@ function CaseDetail({ p, c }: { p: CasesProps; c: CaseFile }) {
       {modal === "upload" && <UploadModal p={p} c={c} onClose={() => setModal(null)} />}
       {modal === "transfer" && <TransferModal p={p} c={c} onClose={() => setModal(null)} />}
       {(modal === "close" || modal === "dismiss") && <CloseDismissModal p={p} c={c} kind={modal === "close" ? "CLOSED" : "DISMISSED"} onClose={() => setModal(null)} />}
+      {modal === "delete" && <DeleteCaseModal p={p} c={c} onClose={() => setModal(null)} />}
+      {modal === "shutAccount" && <ShutAccountModal p={p} c={c} onClose={() => setModal(null)} />}
     </div>
   );
 }
@@ -977,5 +987,100 @@ function CaseAuditTab({ p, c }: { p: CasesProps; c: CaseFile }) {
         {links.length === 0 && <li className="px-4 py-12 text-center font-mono text-[11px] uppercase tracking-widest text-ink3">—</li>}
       </ul>
     </Panel>
+  );
+}
+
+function DeleteCaseModal({ p, c, onClose }: { p: CasesProps; c: CaseFile; onClose: () => void }) {
+  const t = useT();
+  const [reason, setReason] = useState("");
+  const [confirm, setConfirm] = useState(false);
+  const valid = reason.trim().length > 8 && confirm;
+
+  return (
+    <Modal onClose={onClose}>
+      <ModalHead title="Delete Case" sub={`${c.id} · permanently removed from registry`} onClose={onClose} />
+      <form
+        className="p-5 space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!valid || !p.deleteCase) return;
+          p.deleteCase(c.id, reason.trim());
+          onClose();
+        }}
+      >
+        <div>
+          <label className={labelCls}>Reason for deletion (required, ledgered)</label>
+          <textarea className={inputCls} rows={3} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. False case · no evidence · judicial order dated..." />
+        </div>
+        <label className="flex items-start gap-2 text-[12.5px] text-ink2 cursor-pointer border border-line bg-paper2/60 px-3 py-2.5">
+          <input type="checkbox" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} className="w-4 h-4 mt-0.5 accent-crimson" />
+          I confirm this case should be permanently deleted and understand this action cannot be undone.
+        </label>
+        <div className="flex justify-end gap-2">
+          <Btn kind="ghost" onClick={onClose}>{t("act.cancel")}</Btn>
+          <Btn type="submit" kind="danger" disabled={!valid}>
+            <IcArchive c="w-3.5 h-3.5" /> Delete Case
+          </Btn>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function ShutAccountModal({ p, c, onClose }: { p: CasesProps; c: CaseFile; onClose: () => void }) {
+  const t = useT();
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [reason, setReason] = useState("");
+  const [confirm, setConfirm] = useState(false);
+  
+  const partyUsers = c.parties
+    .filter(pp => pp.role === "ACCUSED" || pp.role === "COMPLAINANT")
+    .map(pp => {
+      const user = p.users.find(u => u.id === pp.userId);
+      return user ? { ...user, partyRole: pp.role } : null;
+    })
+    .filter((u): u is NonNullable<typeof u> => u !== null);
+
+  const valid = selectedUserId && reason.trim().length > 8 && confirm;
+
+  return (
+    <Modal onClose={onClose}>
+      <ModalHead title="Shut Party Account" sub={`${c.id} · suspend party access`} onClose={onClose} />
+      <form
+        className="p-5 space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!valid || !p.shutAccount) return;
+          p.shutAccount(selectedUserId, reason.trim());
+          onClose();
+        }}
+      >
+        <div>
+          <label className={labelCls}>Select party to shut</label>
+          <select className={inputCls} value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
+            <option value="">Choose a party...</option>
+            {partyUsers.map(u => (
+              <option key={u.id} value={u.id}>
+                {u.name} ({u.partyRole === "ACCUSED" ? "Accused" : "Victim/Complainant"})
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className={labelCls}>Reason (required, ledgered)</label>
+          <textarea className={inputCls} rows={3} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Account found to be fraudulent · judicial order..." />
+        </div>
+        <label className="flex items-start gap-2 text-[12.5px] text-ink2 cursor-pointer border border-line bg-paper2/60 px-3 py-2.5">
+          <input type="checkbox" checked={confirm} onChange={(e) => setConfirm(e.target.checked)} className="w-4 h-4 mt-0.5 accent-crimson" />
+          I confirm this account should be shut and the party will lose access to the portal.
+        </label>
+        <div className="flex justify-end gap-2">
+          <Btn kind="ghost" onClick={onClose}>{t("act.cancel")}</Btn>
+          <Btn type="submit" kind="danger" disabled={!valid}>
+            <IcLock c="w-3.5 h-3.5" /> Shut Account
+          </Btn>
+        </div>
+      </form>
+    </Modal>
   );
 }

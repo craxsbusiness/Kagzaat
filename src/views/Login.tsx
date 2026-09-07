@@ -650,77 +650,27 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
               <IcUser c="w-4 h-4 text-[#e0b968]" />
               <span className="font-display uppercase tracking-[0.1em] text-[13px]">{t("role.ADMIN")}</span>
             </div>
-          ) : !unlocked ? (
-            <>
-              {/* parties get exactly two choices */}
-              <div className="grid grid-cols-2 gap-3">
-                {(["VICTIM", "ACCUSED"] as const).map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => setRole(r)}
-                    aria-pressed={role === r}
-                    className={`relative rounded-lg border px-3 py-3.5 text-left transition-all duration-150 ${
-                      role === r
-                        ? "border-[#e0b968] bg-[#e0b968]/10 shadow-[inset_0_-3px_0_#e0b968]"
-                        : "border-navyline bg-navy2/50 hover:border-paper/40"
-                    }`}
-                  >
-                    <span className={`font-display font-semibold uppercase tracking-[0.1em] text-[14px] block ${role === r ? "text-[#e0b968]" : "text-paper/85"}`}>
-                      {t(`role.${r}`)}
-                    </span>
-                    <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/45 block mt-1">
-                      {r === "VICTIM" ? t("signup.pickVictim") : t("signup.pickAccused")}
-                    </span>
-                    {role === r && (
-                      <span className="absolute top-2 right-2 text-[#e0b968] stamp-in"><IcCheck c="w-3.5 h-3.5" /></span>
-                    )}
-                  </button>
-                ))}
-              </div>
-              {/* officials need the access code */}
-              {!officialOpen ? (
-                <button
-                  type="button"
-                  onClick={() => setOfficialOpen(true)}
-                  className="mt-2 font-mono text-[9.5px] uppercase tracking-[0.16em] text-paper/45 hover:text-[#e0b968] transition-colors"
-                >
-                  {t("signup.officialLink")} →
-                </button>
-              ) : (
-                <div className="mt-2 modal-in border border-navyline rounded-lg bg-navy2/50 p-3">
-                  <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-paper/55 mb-2">{t("signup.officialTitle")}</p>
-                  <div className="flex gap-2">
-                    <input
-                      className={`${field} !py-2 font-mono tracking-[0.2em]`}
-                      type="password"
-                      inputMode="numeric"
-                      value={officialCode}
-                      onChange={(e) => setOfficialCode(e.target.value)}
-                      placeholder={t("signup.officialCodePh")}
-                      aria-label={t("signup.officialTitle")}
-                    />
-                    <Btn kind="navy" onClick={tryUnlock}>{t("act.confirm")}</Btn>
-                  </div>
-                  <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/40 mt-2 leading-relaxed">{t("signup.officialHint")}</p>
-                </div>
-              )}
-            </>
           ) : (
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-paper/40"><IcUser c="w-4 h-4" /></span>
-              <select
-                className={`${field} !bg-navy2/90 pl-9 pr-9 appearance-none cursor-pointer`}
-                value={role}
-                onChange={(e) => setRole(e.target.value as RoleId)}
-                aria-label={t("signup.roleLbl")}
-              >
-                {ALL_ROLES.map((r) => (
-                  <option key={r} value={r}>{t(`role.${r}`)}</option>
-                ))}
-              </select>
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-paper/40 pointer-events-none"><IcChevD c="w-3.5 h-3.5" /></span>
-            </div>
+            <>
+              {/* Only official roles can self-register. VICTIM and ACCUSED accounts are created by police. */}
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-paper/40"><IcUser c="w-4 h-4" /></span>
+                <select
+                  className={`${field} !bg-navy2/90 pl-9 pr-9 appearance-none cursor-pointer`}
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as RoleId)}
+                  aria-label={t("signup.roleLbl")}
+                >
+                  {OFFICIAL_ROLES.map((r) => (
+                    <option key={r} value={r}>{t(`role.${r}`)}</option>
+                  ))}
+                </select>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-paper/40 pointer-events-none"><IcChevD c="w-3.5 h-3.5" /></span>
+              </div>
+              <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/40 mt-2 leading-relaxed">
+                Note: Victim and Accused accounts are created by police officers through their portal.
+              </p>
+            </>
           )}
           {empty && <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-amber2 mt-1.5">{t("signup.foundingNote")}</p>}
         </div>

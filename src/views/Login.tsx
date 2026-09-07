@@ -88,7 +88,7 @@ function Gateway(p: Props) {
         magicHandled.current = true;
         setPending(u);
         setStep("sec");
-        p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_OK", device, ip, location: "Gateway", note: "Email verification link followed · factor 2 completed" });
+        p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_OK", device, ip, location: "Gateway", note: "Authenticator code verified · factor 2 completed" });
         toast("success", t("login.linkOk"));
       }
     }
@@ -143,26 +143,26 @@ function Gateway(p: Props) {
     setErr(null);
     setPending(u);
 
-    /* step 2 · TOTP authenticator code */
-    setStep("otp");
-  };
-
-  /* ---------------- step 2 · TOTP verification ---------------- */
-  const submitOtp = async () => {
-    const u = pending!;
-    
-    /* first-time TOTP setup */
+    /* step 2 · Check if authenticator is set up */
     if (!u.totpSecret) {
+      /* First time - generate secret and go straight to QR setup */
       const secret = generateSecret();
       const recoveryCodes = generateRecoveryCodes();
       p.onSaveTOTP(u.id, secret, recoveryCodes);
       setTotpSetup({ secret, recoveryCodes });
       setStep("setup");
-      return;
+    } else {
+      /* Already set up - verify code */
+      setStep("otp");
     }
+  };
 
-    /* verify TOTP code */
-    const valid = await verifyTOTP(u.totpSecret, otpInput);
+  /* ---------------- step 2 · TOTP verification ---------------- */
+  const submitOtp = async () => {
+    const u = pending!;
+
+    /* verify TOTP code from authenticator app */
+    const valid = await verifyTOTP(u.totpSecret!, otpInput);
     if (!valid) {
       /* check recovery codes */
       const rcResult = verifyRecoveryCode(otpInput, u.recoveryCodesHashed ?? []);
@@ -175,7 +175,7 @@ function Gateway(p: Props) {
       /* recovery code used - mark it as consumed */
       const newHashes = [...(u.recoveryCodesHashed ?? [])];
       newHashes.splice(rcResult.index, 1);
-      p.onSaveTOTP(u.id, u.totpSecret, newHashes);
+      p.onSaveTOTP(u.id, u.totpSecret!, newHashes);
       p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_OK", device, ip, location: "Gateway", note: "Recovery code verified" });
     } else {
       p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_OK", device, ip, location: "Gateway", note: "TOTP code verified" });
@@ -364,9 +364,13 @@ function Gateway(p: Props) {
                 {step === "otp" && (
                   <>
                     <header className="px-7 pt-4 pb-3">
-                      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e0b968]">{t("login.step")}</p>
-                      <h2 className="font-display font-semibold uppercase tracking-wide text-[22px] mt-1">{t("login.mfaTitle")}</h2>
-                      <p className="text-[12.5px] text-paper/55 mt-1.5">{t("login.mfaSub")}</p>
+                      <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e0b968]">{t("login.stepN")} 2 {t("login.ofN")} 3</p>
+                      <h2 className="font-display font-semibold uppercase tracking-wide text-[22px] mt-1">
+                        {t("login.mfaTitle")}
+                      </h2>
+                      <p className="text-[12.5px] text-paper/55 mt-1.5">
+                        {t("login.mfaSub")}
+                      </p>
                     </header>
                     <form className="px-7 pb-5 space-y-4" onSubmit={(e) => { e.preventDefault(); void submitOtp(); }}>
                       <input
@@ -379,12 +383,14 @@ function Gateway(p: Props) {
                         aria-label={t("login.mfaTitle")}
                       />
                       <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/40 text-center">
-                        {pending?.totpSecret ? "Enter code from your authenticator app" : "First time? We'll set up your authenticator next"}
+                        Google Authenticator · Authy · 1Password · or similar
                       </p>
                       {err && <p className="text-[12.5px] text-[#f0a48f] border-l-2 border-crimson pl-3">{err}</p>}
                       <div className="flex gap-2">
                         <Btn kind="ghost" onClick={backToCreds} className="!text-paper/70 !border-navyline hover:!border-paper/40">{t("act.back")}</Btn>
-                        <Btn type="submit" disabled={otpInput.length !== 6} className="flex-1"><IcLock c="w-4 h-4" /> {t("login.verify")}</Btn>
+                        <Btn type="submit" disabled={otpInput.length !== 6} className="flex-1">
+                          <IcLock c="w-4 h-4" /> {t("login.verify")}
+                        </Btn>
                       </div>
                     </form>
                   </>

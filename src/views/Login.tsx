@@ -550,20 +550,24 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
   const [err, setErr] = useState<string | null>(null);
   const [shake, setShake] = useState(0);
   const [personCode, setPersonCode] = useState<string | null>(null);
-  const [officialOpen, setOfficialOpen] = useState(false);
   const [officialCode, setOfficialCode] = useState("");
-  const [unlocked, setUnlocked] = useState(false);
+  const [signupStep, setSignupStep] = useState<1 | 2 | 3>(empty ? 3 : 1); // Step 1: role, Step 2: code, Step 3: details
+  
   // Only official roles can self-register. VICTIM and ACCUSED must be created by police.
   const OFFICIAL_ROLES: RoleId[] = ["JUDGE", "LAWYER", "POLICE", "ADMIN", "AUDITOR"];
   
   // Common official access code for all official roles
   const OFFICIAL_ACCESS_CODE = "12345";
 
-  const tryUnlock = () => {
+  const handleRoleSelect = (selectedRole: RoleId) => {
+    setRole(selectedRole);
+    setSignupStep(2); // Move to code step
+  };
+
+  const handleCodeSubmit = () => {
     if (officialCode.trim() === OFFICIAL_ACCESS_CODE) {
-      setUnlocked(true);
-      setOfficialOpen(false);
       setErr(null);
+      setSignupStep(3); // Move to details step
       toast("success", t("signup.officialUnlocked"), t("signup.roleLbl"));
     } else {
       p.pushSecurity?.("WARN", "OFFICIAL_CODE_FAIL", "Incorrect official access code entered during public registration");
@@ -575,14 +579,13 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
   const okPw = pw.length >= 8;
   const okPhone = PHONE_RE.test(phone.trim());
   const okQ = !qCustom || qText.trim().length >= 6;
-  const okUnlocked = empty || unlocked; // First run doesn't need unlock
   const valid =
     name.trim().length >= 3 && email.includes("@") && okPw && pw === pw2 && okPhone && okQ &&
-    ans.trim().length >= 2 && okUnlocked;
+    ans.trim().length >= 2;
 
   const submit = () => {
     if (!valid) {
-      setErr(!okPw ? "Password must be at least 8 characters." : pw !== pw2 ? "Passwords do not match." : !okPhone ? t("signup.phoneBad") : !okQ ? "Write your custom question." : !okUnlocked ? "Please enter the official access code first." : "Complete all fields.");
+      setErr(!okPw ? "Password must be at least 8 characters." : pw !== pw2 ? "Passwords do not match." : !okPhone ? t("signup.phoneBad") : !okQ ? "Write your custom question." : "Complete all fields.");
       setShake((s) => s + 1);
       return;
     }
@@ -645,110 +648,135 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
           {empty ? t("signup.foundingNote") : t("signup.lede")}
         </p>
       </header>
-      <form className="px-7 pb-5 space-y-4" onSubmit={(e) => { e.preventDefault(); submit(); }}>
-        <div>
-          <label className={label}>{t("signup.roleLbl")}</label>
-          {empty ? (
-            <div className={`${field} flex items-center gap-2 !py-3 text-paper/80`}>
-              <IcUser c="w-4 h-4 text-[#e0b968]" />
-              <span className="font-display uppercase tracking-[0.1em] text-[13px]">{t("role.ADMIN")}</span>
-            </div>
-          ) : !unlocked ? (
-            <>
-              {/* Official access code required for all official roles */}
-              <div className="border border-navyline bg-navy2/50 px-4 py-3">
-                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-paper/55 mb-2">
-                  Official Access Code Required
-                </p>
-                <p className="text-[12px] text-paper/60 mb-3">
-                  Judge, Lawyer, Police, Admin, and Auditor roles require an official access code to register.
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    className={`${field} !py-2 font-mono tracking-[0.2em]`}
-                    type="password"
-                    inputMode="numeric"
-                    value={officialCode}
-                    onChange={(e) => setOfficialCode(e.target.value)}
-                    placeholder="Enter access code"
-                    aria-label="Official access code"
-                  />
-                  <Btn kind="navy" onClick={tryUnlock}>{t("act.confirm")}</Btn>
-                </div>
-                <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/40 mt-2 leading-relaxed">
-                  Contact your judicial council or police department to obtain the official access code.
-                </p>
+      <form className="px-7 pb-5 space-y-4" onSubmit={(e) => { e.preventDefault(); if (signupStep === 3) submit(); }}>
+        {/* Step 1: Role Selection */}
+        {signupStep === 1 && (
+          <div className="space-y-4">
+            <div>
+              <label className={label}>{t("signup.roleLbl")}</label>
+              <p className="text-[12px] text-paper/60 mb-3">What is your role in the legal system?</p>
+              <div className="grid grid-cols-1 gap-2">
+                {OFFICIAL_ROLES.map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => handleRoleSelect(r)}
+                    className="w-full text-left border border-navyline bg-navy2/50 hover:bg-navy2/70 px-4 py-3 transition-colors"
+                  >
+                    <span className="font-display uppercase tracking-[0.1em] text-[14px] text-paper">
+                      {t(`role.${r}`)}
+                    </span>
+                  </button>
+                ))}
               </div>
-            </>
-          ) : (
-            <>
-              {/* Role selection unlocked */}
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-paper/40"><IcUser c="w-4 h-4" /></span>
-                <select
-                  className={`${field} !bg-navy2/90 pl-9 pr-9 appearance-none cursor-pointer`}
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as RoleId)}
-                  aria-label={t("signup.roleLbl")}
-                >
-                  {OFFICIAL_ROLES.map((r) => (
-                    <option key={r} value={r}>{t(`role.${r}`)}</option>
-                  ))}
-                </select>
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-paper/40 pointer-events-none"><IcChevD c="w-3.5 h-3.5" /></span>
-              </div>
-              <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-green2 mt-2 leading-relaxed">
-                ✓ Official access verified. Victim and Accused accounts are created by police officers through their portal.
+              <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/40 mt-3 leading-relaxed">
+                Note: Victim and Accused accounts are created by police officers through their portal.
               </p>
-            </>
-          )}
-          {empty && <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-amber2 mt-1.5">{t("signup.foundingNote")}</p>}
-        </div>
-        
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label className={label}>{t("firstrun.name")}</label>
-            <input className={field} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("signup.namePh")} />
+            </div>
           </div>
-          <div>
-            <label className={label}>{t("signup.phone")}</label>
-            <input className={field} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t("signup.phonePh")} />
+        )}
+
+        {/* Step 2: Access Code */}
+        {signupStep === 2 && (
+          <div className="space-y-4">
+            <div>
+              <label className={label}>Official Access Code</label>
+              <p className="text-[12px] text-paper/60 mb-3">
+                Enter the official access code to continue registration as {t(`role.${role}`)}.
+              </p>
+              <input
+                className={`${field} !py-3 font-mono tracking-[0.3em] text-center text-[16px]`}
+                type="password"
+                inputMode="numeric"
+                value={officialCode}
+                onChange={(e) => setOfficialCode(e.target.value)}
+                placeholder="•••••"
+                aria-label="Official access code"
+                autoFocus
+              />
+              <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/40 mt-2 leading-relaxed">
+                Contact your judicial council or police department to obtain the official access code.
+              </p>
+            </div>
+            {err && <p className="text-[12.5px] text-[#f0a48f] border-l-2 border-crimson pl-3">{err}</p>}
+            <div className="flex gap-2">
+              <Btn kind="ghost" onClick={() => { setSignupStep(1); setErr(null); setOfficialCode(""); }}>
+                {t("act.back")}
+              </Btn>
+              <Btn kind="navy" onClick={handleCodeSubmit} className="flex-1">
+                {t("act.confirm")}
+              </Btn>
+            </div>
           </div>
-        </div>
-        <div>
-          <label className={label}>{t("firstrun.email")}</label>
-          <input className={field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("signup.emailPh")} />
-        </div>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label className={label}>{t("firstrun.pw")}</label>
-            <input className={field} type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="••••••••" />
-          </div>
-          <div>
-            <label className={label}>{t("firstrun.pw2")}</label>
-            <input className={field} type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} placeholder="••••••••" />
-          </div>
-        </div>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label className={label}>{t("firstrun.secQ")}</label>
-            <select className={`${field} !bg-navy2/90 cursor-pointer`} value={qCustom ? "custom" : String(qIdx)} onChange={(e) => { if (e.target.value === "custom") setQCustom(true); else { setQCustom(false); setQIdx(Number(e.target.value)); } }}>
-              {SEC_QUESTIONS.map((qq, i) => <option key={i} value={i}>{qq[lang]}</option>)}
-              <option value="custom">{t("signup.secCustom")}</option>
-            </select>
-            {qCustom && <input className={`${field} mt-2`} value={qText} onChange={(e) => setQText(e.target.value)} placeholder={t("signup.secCustomPh")} />}
-          </div>
-          <div>
-            <label className={label}>{t("firstrun.secA")}</label>
-            <input className={field} type="password" value={ans} onChange={(e) => setAns(e.target.value)} placeholder="••••••" />
-            <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/40 mt-1.5">{t("signup.ansHint")}</p>
-          </div>
-        </div>
-        {err && <p className="text-[12.5px] text-[#f0a48f] border-l-2 border-crimson pl-3">{err}</p>}
-        <Btn type="submit" kind="green" disabled={!valid} className="w-full !py-3 !text-[13px]">
-          <IcUser c="w-4 h-4" /> {t("signup.submit")}
-        </Btn>
-        <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-paper/40 text-center leading-relaxed">{t("signup.3faNote")}</p>
+        )}
+
+        {/* Step 3: Account Details */}
+        {signupStep === 3 && (
+          <>
+            <div>
+              <label className={label}>{t("signup.roleLbl")}</label>
+              <div className={`${field} flex items-center gap-2 !py-3 text-paper/80`}>
+                <IcUser c="w-4 h-4 text-green2" />
+                <span className="font-display uppercase tracking-[0.1em] text-[13px]">{t(`role.${role}`)}</span>
+                {!empty && (
+                  <button
+                    type="button"
+                    onClick={() => { setSignupStep(1); setOfficialCode(""); }}
+                    className="ml-auto font-mono text-[9px] uppercase tracking-[0.14em] text-paper/40 hover:text-paper/60"
+                  >
+                    Change
+                  </button>
+                )}
+              </div>
+              {empty && <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-amber2 mt-1.5">{t("signup.foundingNote")}</p>}
+            </div>
+            
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className={label}>{t("firstrun.name")}</label>
+                <input className={field} value={name} onChange={(e) => setName(e.target.value)} placeholder={t("signup.namePh")} />
+              </div>
+              <div>
+                <label className={label}>{t("signup.phone")}</label>
+                <input className={field} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t("signup.phonePh")} />
+              </div>
+            </div>
+            <div>
+              <label className={label}>{t("firstrun.email")}</label>
+              <input className={field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("signup.emailPh")} />
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className={label}>{t("firstrun.pw")}</label>
+                <input className={field} type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="••••••••" />
+              </div>
+              <div>
+                <label className={label}>{t("firstrun.pw2")}</label>
+                <input className={field} type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} placeholder="••••••••" />
+              </div>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className={label}>{t("firstrun.secQ")}</label>
+                <select className={`${field} !bg-navy2/90 cursor-pointer`} value={qCustom ? "custom" : String(qIdx)} onChange={(e) => { if (e.target.value === "custom") setQCustom(true); else { setQCustom(false); setQIdx(Number(e.target.value)); } }}>
+                  {SEC_QUESTIONS.map((qq, i) => <option key={i} value={i}>{qq[lang]}</option>)}
+                  <option value="custom">{t("signup.secCustom")}</option>
+                </select>
+                {qCustom && <input className={`${field} mt-2`} value={qText} onChange={(e) => setQText(e.target.value)} placeholder={t("signup.secCustomPh")} />}
+              </div>
+              <div>
+                <label className={label}>{t("firstrun.secA")}</label>
+                <input className={field} type="password" value={ans} onChange={(e) => setAns(e.target.value)} placeholder="••••••" />
+                <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/40 mt-1.5">{t("signup.ansHint")}</p>
+              </div>
+            </div>
+            {err && <p className="text-[12.5px] text-[#f0a48f] border-l-2 border-crimson pl-3">{err}</p>}
+            <Btn type="submit" kind="green" disabled={!valid} className="w-full !py-3 !text-[13px]">
+              <IcUser c="w-4 h-4" /> {t("signup.submit")}
+            </Btn>
+            <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-paper/40 text-center leading-relaxed">{t("signup.3faNote")}</p>
+          </>
+        )}
       </form>
     </div>
   );

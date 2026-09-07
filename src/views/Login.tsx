@@ -553,16 +553,14 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
   const [officialOpen, setOfficialOpen] = useState(false);
   const [officialCode, setOfficialCode] = useState("");
   const [unlocked, setUnlocked] = useState(false);
-  const [judgePersonalCode, setJudgePersonalCode] = useState("");
-  
   // Only official roles can self-register. VICTIM and ACCUSED must be created by police.
   const OFFICIAL_ROLES: RoleId[] = ["JUDGE", "LAWYER", "POLICE", "ADMIN", "AUDITOR"];
   
-  // Judge personal code for additional security (prevents fake judge accounts)
-  const JUDGE_PERSONAL_CODE = "JUDGE2026";
+  // Common official access code for all official roles
+  const OFFICIAL_ACCESS_CODE = "12345";
 
   const tryUnlock = () => {
-    if (officialCode.trim() === "12345") {
+    if (officialCode.trim() === OFFICIAL_ACCESS_CODE) {
       setUnlocked(true);
       setOfficialOpen(false);
       setErr(null);
@@ -577,22 +575,14 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
   const okPw = pw.length >= 8;
   const okPhone = PHONE_RE.test(phone.trim());
   const okQ = !qCustom || qText.trim().length >= 6;
-  const okJudgeCode = role !== "JUDGE" || judgePersonalCode.trim() === JUDGE_PERSONAL_CODE;
+  const okUnlocked = empty || unlocked; // First run doesn't need unlock
   const valid =
     name.trim().length >= 3 && email.includes("@") && okPw && pw === pw2 && okPhone && okQ &&
-    ans.trim().length >= 2 && okJudgeCode;
+    ans.trim().length >= 2 && okUnlocked;
 
   const submit = () => {
     if (!valid) {
-      setErr(!okPw ? "Password must be at least 8 characters." : pw !== pw2 ? "Passwords do not match." : !okPhone ? t("signup.phoneBad") : !okQ ? "Write your custom question." : !okJudgeCode ? "Invalid judge personal code." : "Complete all fields.");
-      setShake((s) => s + 1);
-      return;
-    }
-    
-    // Log security event if judge code is wrong
-    if (role === "JUDGE" && judgePersonalCode.trim() !== JUDGE_PERSONAL_CODE) {
-      p.pushSecurity?.("CRITICAL", "JUDGE_CODE_FAIL", `Unauthorized judge signup attempt with code: ${judgePersonalCode}`);
-      setErr("Invalid judge personal code. This attempt has been logged.");
+      setErr(!okPw ? "Password must be at least 8 characters." : pw !== pw2 ? "Passwords do not match." : !okPhone ? t("signup.phoneBad") : !okQ ? "Write your custom question." : !okUnlocked ? "Please enter the official access code first." : "Complete all fields.");
       setShake((s) => s + 1);
       return;
     }
@@ -663,9 +653,36 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
               <IcUser c="w-4 h-4 text-[#e0b968]" />
               <span className="font-display uppercase tracking-[0.1em] text-[13px]">{t("role.ADMIN")}</span>
             </div>
+          ) : !unlocked ? (
+            <>
+              {/* Official access code required for all official roles */}
+              <div className="border border-navyline bg-navy2/50 px-4 py-3">
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-paper/55 mb-2">
+                  Official Access Code Required
+                </p>
+                <p className="text-[12px] text-paper/60 mb-3">
+                  Judge, Lawyer, Police, Admin, and Auditor roles require an official access code to register.
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    className={`${field} !py-2 font-mono tracking-[0.2em]`}
+                    type="password"
+                    inputMode="numeric"
+                    value={officialCode}
+                    onChange={(e) => setOfficialCode(e.target.value)}
+                    placeholder="Enter access code"
+                    aria-label="Official access code"
+                  />
+                  <Btn kind="navy" onClick={tryUnlock}>{t("act.confirm")}</Btn>
+                </div>
+                <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/40 mt-2 leading-relaxed">
+                  Contact your judicial council or police department to obtain the official access code.
+                </p>
+              </div>
+            </>
           ) : (
             <>
-              {/* Only official roles can self-register. VICTIM and ACCUSED accounts are created by police. */}
+              {/* Role selection unlocked */}
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-paper/40"><IcUser c="w-4 h-4" /></span>
                 <select
@@ -680,30 +697,13 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
                 </select>
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-paper/40 pointer-events-none"><IcChevD c="w-3.5 h-3.5" /></span>
               </div>
-              <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/40 mt-2 leading-relaxed">
-                Note: Victim and Accused accounts are created by police officers through their portal.
+              <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-green2 mt-2 leading-relaxed">
+                ✓ Official access verified. Victim and Accused accounts are created by police officers through their portal.
               </p>
             </>
           )}
           {empty && <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-amber2 mt-1.5">{t("signup.foundingNote")}</p>}
         </div>
-        
-        {/* Judge Personal Code - Additional Security */}
-        {role === "JUDGE" && !empty && (
-          <div>
-            <label className={label}>Judge Personal Access Code</label>
-            <input 
-              className={field} 
-              type="password" 
-              value={judgePersonalCode} 
-              onChange={(e) => setJudgePersonalCode(e.target.value)} 
-              placeholder="Enter your personal judge code"
-            />
-            <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/40 mt-1.5">
-              Required for judge registration. Contact the judicial council if you don't have this code.
-            </p>
-          </div>
-        )}
         
         <div className="grid sm:grid-cols-2 gap-4">
           <div>

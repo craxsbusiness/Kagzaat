@@ -12,6 +12,7 @@ interface Props {
   courts: Court[];
   cases: CaseFile[];
   onToggleUser: (id: string) => void;
+  onDeleteUser: (id: string) => void;
   onRegisterCase: (p: { title: string; type: CaseFile["type"]; courtId: string; judgeId: string; firNumber: string; accusedId: string; victimId: string; stationId: string; ioId: string }) => void;
   onDecideTransfer: (caseId: string, trfId: string, approve: boolean) => void;
   onCreateUser: (p: { name: string; role: RoleId; email: string; phone: string; unit: string; courtIds: string[]; stationId: string; password: string; secQuestion: string; secAnswer: string }) => void;
@@ -147,9 +148,20 @@ export default function AdminPanel(p: Props) {
                   <td className="px-4 py-2.5 text-[11.5px] text-ink2">{u.clearanceNote}</td>
                   <td className="px-4 py-2.5">
                     {u.id !== p.user.id && (
-                      <Btn kind={u.status === "ACTIVE" ? "danger" : "green"} onClick={() => p.onToggleUser(u.id)}>
-                        {u.status === "ACTIVE" ? "Suspend" : "Reactivate"}
-                      </Btn>
+                      <div className="flex gap-2">
+                        <Btn kind={u.status === "ACTIVE" ? "danger" : "green"} onClick={() => p.onToggleUser(u.id)}>
+                          {u.status === "ACTIVE" ? "Suspend" : "Reactivate"}
+                        </Btn>
+                        {(u.role === "JUDGE" || u.role === "POLICE" || u.role === "LAWYER" || u.role === "ADMIN" || u.role === "AUDITOR") && (
+                          <Btn kind="danger" onClick={() => {
+                            if (confirm(`Delete ${u.name}'s account? This cannot be undone.`)) {
+                              p.onDeleteUser(u.id);
+                            }
+                          }}>
+                            Delete
+                          </Btn>
+                        )}
+                      </div>
                     )}
                   </td>
                 </tr>

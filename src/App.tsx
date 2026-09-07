@@ -634,6 +634,27 @@ function Portal() {
     toast("info", `${u.name} ${next.toLowerCase()}`, "Change written to the ledger.");
   };
 
+  const deleteUser = (id: string) => {
+    const u = users.find((x) => x.id === id);
+    if (!u || !user) return;
+    
+    // Only allow deletion of official roles, not victim/accused
+    if (u.role === "VICTIM" || u.role === "ACCUSED") {
+      toast("error", "Cannot delete party account", "Victim and accused accounts cannot be deleted for legal record preservation.");
+      return;
+    }
+    
+    // Cannot delete yourself
+    if (u.id === user.id) {
+      toast("error", "Cannot delete your own account", "You cannot delete your own account while logged in.");
+      return;
+    }
+    
+    setUsers((prev) => prev.filter((x) => x.id !== id));
+    log("USER_DELETED", { detail: `${u.name} (${ROLE_LABEL[u.role]}) permanently deleted by ${user.name}` });
+    toast("success", "Account deleted", `${u.name}'s account has been permanently removed.`);
+  };
+
   const resetWorkspace = () => {
     if (!user) return;
     log("WORKSPACE_RESET", { detail: `Factory reset executed by ${user.name} — registry returned to empty first-run state` });
@@ -1050,7 +1071,7 @@ function Portal() {
             {nav === "admin" && user.role === "ADMIN" && (
               <AdminPanel
                 user={user} users={users} courts={courts} cases={cases}
-                onToggleUser={toggleUser} onRegisterCase={registerCase} onDecideTransfer={decideTransfer}
+                onToggleUser={toggleUser} onDeleteUser={deleteUser} onRegisterCase={registerCase} onDecideTransfer={decideTransfer}
                 onCreateUser={createUser} onAddCourt={addCourt} onResetWorkspace={resetWorkspace}
               />
             )}

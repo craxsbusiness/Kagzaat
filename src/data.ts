@@ -20,6 +20,10 @@ export interface User {
   /* factor 3 — secret question; answer stored only as a digest */
   secQuestion: string;
   secAnswerHash: string;
+  /* factor 2 — TOTP secret (base32); empty until setup is completed */
+  totpSecret?: string;
+  totpSetupPending?: boolean;
+  recoveryCodesHashed?: string[];
   phone?: string;
   personCode?: string;
 }

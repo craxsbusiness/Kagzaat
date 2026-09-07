@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { LoginEvent, RoleId, User } from "../data";
 import { SEC_QUESTIONS } from "../data";
 import { deviceInfo, hashPassword, hashSecret } from "../lib";
-import { isSupabaseConfigured, sendOtpEmail, verifyEmailOtp } from "../supabase";
+import { generateOTPAuthURI, generateRecoveryCodes, generateSecret, verifyRecoveryCode, verifyTOTP } from "../totp";
 import { Btn, useCopy, useToast } from "../ui";
 import { usePrefs, useT } from "../i18n";
 import { IcCheck, IcChevD, IcCopy, IcKey, IcLock, IcShield, IcUser, IcX } from "../icons";
+import QRCode from "qrcode";
 
 interface Props {
   users: User[];
@@ -15,6 +16,8 @@ interface Props {
   logLoginEvent: (ev: Omit<LoginEvent, "id" | "ts">) => void;
   /** returns the new person code, or null if the email is already registered */
   onSignup: (p: { name: string; role: RoleId; email: string; phone: string; password: string; secQuestion: string; secAnswer: string }) => string | null;
+  /** saves TOTP secret and recovery codes for a user */
+  onSaveTOTP: (userId: string, secret: string, recoveryCodes: string[]) => void;
   pushSecurity?: (severity: "INFO" | "WARN" | "CRITICAL", kind: string, detail: string, userId?: string) => void;
   onBackToLanding?: () => void;
   notice?: string | null;
@@ -41,9 +44,9 @@ function Gateway(p: Props) {
   const empty = p.users.length === 0;
 
   const [mode, setMode] = useState<"signin" | "signup">(p.initialMode ?? (empty ? "signup" : "signin"));
-  const [step, setStep] = useState<"creds" | "otp" | "sec">("creds");
+  const [step, setStep] = useState<"creds" | "otp" | "sec" | "setup">("creds");
   const [pending, setPending] = useState<User | null>(null);
-  const [otpMode, setOtpMode] = useState<"email" | "demo">("demo");
+  const [totpSetup, setTotpSetup] = useState<{ secret: string; recoveryCodes: string[] } | null>(null);
 
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
@@ -140,47 +143,44 @@ function Gateway(p: Props) {
     setErr(null);
     setPending(u);
 
-    /* step 2 · one-time code — real email via Supabase when configured.
-       A clicked verification link returns with #access_token and completes this step. */
-    if (isSupabaseConfigured()) {
-      localStorage.setItem("lv4:otp-return", u.id);
-      setOtpSending(true);
-      const r = await sendOtpEmail(u.email);
-      setOtpSending(false);
-      if (r.ok) {
-        setOtpMode("email");
-        toast("info", t("login.otpSent"), u.email);
-      } else {
-        setOtpMode("demo");
-        toast("warning", t("login.otpSendFail"), r.error);
-      }
-    } else {
-      setOtpMode("demo");
-    }
+    /* step 2 · TOTP authenticator code */
     setStep("otp");
   };
 
-  /* ---------------- step 2 · one-time code ---------------- */
+  /* ---------------- step 2 · TOTP verification ---------------- */
   const submitOtp = async () => {
     const u = pending!;
-    if (otpMode === "email") {
-      const r = await verifyEmailOtp(u.email, otpInput);
-      if (!r.ok) {
-        p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_FAIL", device, ip, location: "Gateway", note: `Incorrect one-time code · ${r.error ?? ""}` });
-        setShake((s) => s + 1);
-        setErr("Incorrect one-time code. Ledgered as MFA_FAIL.");
-        return;
-      }
-      p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_OK", device, ip, location: "Gateway", note: "Email one-time code verified via Supabase" });
-    } else {
-      if (otpInput !== demoCode) {
-        p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_FAIL", device, ip, location: "Gateway", note: "Incorrect one-time code (demo channel)" });
-        setShake((s) => s + 1);
-        setErr("Incorrect one-time code. Ledgered as MFA_FAIL.");
-        return;
-      }
-      p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_OK", device, ip, location: "Gateway", note: "One-time code accepted (demo channel)" });
+    
+    /* first-time TOTP setup */
+    if (!u.totpSecret) {
+      const secret = generateSecret();
+      const recoveryCodes = generateRecoveryCodes();
+      p.onSaveTOTP(u.id, secret, recoveryCodes);
+      setTotpSetup({ secret, recoveryCodes });
+      setStep("setup");
+      return;
     }
+
+    /* verify TOTP code */
+    const valid = await verifyTOTP(u.totpSecret, otpInput);
+    if (!valid) {
+      /* check recovery codes */
+      const rcResult = verifyRecoveryCode(otpInput, u.recoveryCodesHashed ?? []);
+      if (!rcResult.valid) {
+        p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_FAIL", device, ip, location: "Gateway", note: "Incorrect TOTP or recovery code" });
+        setShake((s) => s + 1);
+        setErr("Incorrect code. Ledgered as MFA_FAIL.");
+        return;
+      }
+      /* recovery code used - mark it as consumed */
+      const newHashes = [...(u.recoveryCodesHashed ?? [])];
+      newHashes.splice(rcResult.index, 1);
+      p.onSaveTOTP(u.id, u.totpSecret, newHashes);
+      p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_OK", device, ip, location: "Gateway", note: "Recovery code verified" });
+    } else {
+      p.logLoginEvent({ userId: u.id, userName: u.name, kind: "MFA_OK", device, ip, location: "Gateway", note: "TOTP code verified" });
+    }
+
     setErr(null);
     setOtpInput("");
     if (u.secQuestion && u.secAnswerHash) {
@@ -378,22 +378,9 @@ function Gateway(p: Props) {
                         autoFocus
                         aria-label={t("login.mfaTitle")}
                       />
-                      {otpMode === "demo" && (
-                        <div className="border border-dashed border-navyline bg-navy2/40 px-3 py-2 flex items-center justify-between">
-                          <span className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-paper/50">{t("login.demoCode")}</span>
-                          <span className="font-mono text-[15px] font-bold text-green2 tracking-[0.3em]">{demoCode}</span>
-                        </div>
-                      )}
-                      {otpMode === "email" && (
-                        <div className="space-y-1.5">
-                          <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-green2 flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green2 pulse-dot" /> {t("login.otpSent")} · {pending?.email}
-                          </p>
-                          <p className="font-mono text-[8.5px] leading-relaxed tracking-wide text-paper/40">
-                            {t("login.otpLinkHint")}
-                          </p>
-                        </div>
-                      )}
+                      <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/40 text-center">
+                        {pending?.totpSecret ? "Enter code from your authenticator app" : "First time? We'll set up your authenticator next"}
+                      </p>
                       {err && <p className="text-[12.5px] text-[#f0a48f] border-l-2 border-crimson pl-3">{err}</p>}
                       <div className="flex gap-2">
                         <Btn kind="ghost" onClick={backToCreds} className="!text-paper/70 !border-navyline hover:!border-paper/40">{t("act.back")}</Btn>
@@ -546,8 +533,8 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
             {copied === "code" ? <IcCheck c="w-4 h-4 text-green2" /> : <IcCopy c="w-4 h-4" />}
           </button>
         </div>
-        <p className={`font-mono text-[9.5px] uppercase tracking-[0.16em] mt-4 ${isSupabaseConfigured() ? "text-green2" : "text-amber2"}`}>
-          {isSupabaseConfigured() ? t("signup.codeEmailed") : t("signup.codeNotEmailed")}
+        <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] mt-4 text-amber2">
+          {t("signup.codeNotEmailed")}
         </p>
         <Btn kind="green" className="mt-6 w-full !py-3" onClick={() => onCreated(email.trim())}>
           {t("signup.codeProceed")}

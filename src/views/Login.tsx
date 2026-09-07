@@ -223,8 +223,8 @@ function Gateway(p: Props) {
 
   return (
     <div className="min-h-screen ambient-login text-paper flex">
-      {/* left — identity panel */}
-      <div className="hidden lg:flex flex-col w-[46%] px-12 py-10 border-r border-navyline relative overflow-hidden">
+      {/* left — identity panel - hidden on login/signup */}
+      <div className="hidden flex-col w-[46%] px-12 py-10 border-r border-navyline relative overflow-hidden">
         <div className="scanline absolute inset-0 pointer-events-none" />
         <div className="flex items-center gap-3 relative z-10">
           <span className="w-11 h-11 bg-crimson flex items-center justify-center"><IcShield c="w-6 h-6" /></span>

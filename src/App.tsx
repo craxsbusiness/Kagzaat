@@ -13,7 +13,7 @@ import { Btn, Chip, ToastProvider, useFeed, useToast } from "./ui";
 import { PrefsProvider, usePrefs, useT } from "./i18n";
 import {
   IcChain, IcCheck, IcCheckSeal, IcClock, IcCourt, IcFolder, IcKey, IcLogout,
-  IcMenu, IcPulse, IcSearch, IcShield, IcX,
+  IcMenu, IcPulse, IcSearch, IcShield, IcUsers, IcX,
 } from "./icons";
 import Login from "./views/Login";
 import Dashboard from "./views/Dashboard";
@@ -21,10 +21,11 @@ import CasesView from "./views/Cases";
 import AuditTrail from "./views/AuditTrail";
 import AdminPanel from "./views/AdminPanel";
 import SearchView from "./views/SearchView";
+import CreatePartyAccount from "./views/CreatePartyAccount";
 import Landing from "./components/Landing";
 import AccessCluster from "./components/AccessCluster";
 
-type Nav = "console" | "cases" | "search" | "audit" | "admin";
+type Nav = "console" | "cases" | "search" | "audit" | "admin" | "createParty";
 
 interface Session {
   userId: string;
@@ -481,6 +482,12 @@ function Portal() {
     const first = users.length === 0;
     const role: RoleId = first ? "ADMIN" : sp.role;
 
+    /* VICTIM and ACCUSED cannot self-register - only police can create their accounts */
+    if (!first && (role === "VICTIM" || role === "ACCUSED")) {
+      log("USER_CREATED", { detail: `Signup rejected — ${ROLE_LABEL[role]} cannot self-register. Contact police to create account.`, actor: sp.name, role: ROLE_LABEL[role] });
+      return null;
+    }
+
     if (!first && users.some((x) => x.email.toLowerCase() === sp.email.toLowerCase())) {
       log("USER_CREATED", { detail: `Signup rejected — email already registered (${sp.email})`, actor: sp.name, role: ROLE_LABEL[role] });
       return null;
@@ -535,6 +542,39 @@ function Portal() {
           : u
       )
     );
+  };
+
+  /* ---------------- police creates victim/accused accounts ---------------- */
+  const createPartyAccount: (pp: { name: string; role: "VICTIM" | "ACCUSED"; email: string; phone: string; password: string; createdBy: string }) => string | null = (pp) => {
+    if (!user || user.role !== "POLICE") return null;
+
+    if (users.some((x) => x.email.toLowerCase() === pp.email.toLowerCase())) {
+      log("USER_CREATED", { detail: `Party account creation rejected — email already registered (${pp.email})`, actor: user.name, role: ROLE_LABEL.POLICE });
+      return null;
+    }
+
+    const personCode = mintPersonCode();
+    const nu: User = {
+      id: uid("USR"),
+      name: pp.name,
+      role: pp.role,
+      unit: ROLE_LABEL[pp.role],
+      courtIds: [],
+      stationId: undefined,
+      email: pp.email,
+      phone: pp.phone || undefined,
+      keyFp: keyFingerprint(),
+      status: "ACTIVE",
+      clearanceNote: "Own cases · permitted docs only",
+      passHash: hashPassword(pp.password),
+      personCode,
+      createdBy: pp.createdBy,
+    };
+    setUsers((prev) => [...prev, nu]);
+    dispatchPersonCode(nu);
+    log("USER_CREATED", { detail: `${pp.name} registered as ${ROLE_LABEL[pp.role]} (${nu.id}) by police ${user.name} · person code ${personCode} issued`, actor: user.name, role: ROLE_LABEL.POLICE });
+    notify(nu.id, "SYSTEM", `Welcome ${pp.name}. Your account has been created by the police. Your person code is ${personCode}.`);
+    return personCode;
   };
 
   const addCourt = (pp: { name: string; level: string; location: string }) => {
@@ -683,6 +723,7 @@ function Portal() {
       ? [{ key: "audit" as Nav, label: t("nav.audit"), icon: <IcChain c="w-4 h-4" /> }]
       : []),
     ...(user.role === "ADMIN" ? [{ key: "admin" as Nav, label: t("nav.admin"), icon: <IcCourt c="w-4 h-4" /> }] : []),
+    ...(user.role === "POLICE" ? [{ key: "createParty" as Nav, label: "Create Party Account", icon: <IcUsers c="w-4 h-4" /> }] : []),
   ];
 
   return (
@@ -972,6 +1013,12 @@ function Portal() {
                 user={user} users={users} courts={courts} cases={cases}
                 onToggleUser={toggleUser} onRegisterCase={registerCase} onDecideTransfer={decideTransfer}
                 onCreateUser={createUser} onAddCourt={addCourt} onResetWorkspace={resetWorkspace}
+              />
+            )}
+            {nav === "createParty" && user.role === "POLICE" && (
+              <CreatePartyAccount
+                user={user}
+                onCreatePartyAccount={createPartyAccount}
               />
             )}
           </main>

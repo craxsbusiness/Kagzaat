@@ -17,15 +17,17 @@ export interface User {
   status: "ACTIVE" | "SUSPENDED";
   clearanceNote: string;
   passHash: string;
-  /* factor 3 — secret question; answer stored only as a digest */
-  secQuestion: string;
-  secAnswerHash: string;
-  /* factor 2 — TOTP secret (base32); empty until setup is completed */
+  /* factor 3 — secret question; answer stored only as a digest (optional for victims/accused) */
+  secQuestion?: string;
+  secAnswerHash?: string;
+  /* factor 2 — TOTP secret (base32); empty until setup is completed (optional for victims/accused) */
   totpSecret?: string;
   totpSetupPending?: boolean;
   recoveryCodesHashed?: string[];
   phone?: string;
   personCode?: string;
+  /* createdBy - tracks who created this account (for victims/accused created by police) */
+  createdBy?: string;
 }
 
 /* secret-question bank (factor 3) — en + hi, other languages fall back via [lang] */

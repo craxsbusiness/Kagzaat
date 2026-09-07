@@ -143,7 +143,14 @@ function Gateway(p: Props) {
     setErr(null);
     setPending(u);
 
-    /* step 2 · Check if authenticator is set up */
+    /* Victims and Accused only need password - no 3-factor authentication */
+    if (u.role === "VICTIM" || u.role === "ACCUSED") {
+      p.logLoginEvent({ userId: u.id, userName: u.name, kind: "SUCCESS", device, ip, location: "Gateway", note: "Password-only authentication (victim/accused)" });
+      p.onLogin(u.id, device, ip);
+      return;
+    }
+
+    /* step 2 · Check if authenticator is set up (for officials only) */
     if (!u.totpSecret) {
       /* First time - generate secret and go straight to QR setup */
       const secret = generateSecret();
@@ -531,7 +538,7 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
   const toast = useToast();
   const { copied, copy } = useCopy();
   const [name, setName] = useState("");
-  const [role, setRole] = useState<RoleId>(empty ? "ADMIN" : "VICTIM");
+  const [role, setRole] = useState<RoleId>(empty ? "ADMIN" : "JUDGE");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [pw, setPw] = useState("");
@@ -546,6 +553,9 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
   const [officialOpen, setOfficialOpen] = useState(false);
   const [officialCode, setOfficialCode] = useState("");
   const [unlocked, setUnlocked] = useState(false);
+  
+  // Only official roles can self-register. VICTIM and ACCUSED must be created by police.
+  const OFFICIAL_ROLES: RoleId[] = ["JUDGE", "LAWYER", "POLICE", "ADMIN", "AUDITOR"];
 
   const tryUnlock = () => {
     if (officialCode.trim() === "12345") {

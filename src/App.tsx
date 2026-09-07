@@ -46,15 +46,15 @@ function Portal() {
 
   /* ---------------- persistent state (starts EMPTY) ---------------- */
   const [session, setSession] = useLocalState<Session | null>("lv4:session", null);
-  const [users, setUsers] = useLocalState<User[]>("lv4:users", USERS);
-  const [courts, setCourts] = useLocalState<Court[]>("lv4:courts", COURTS_SEED);
-  const [cases, setCases] = useLocalState<CaseFile[]>("lv4:cases", SEED_CASES);
-  const [docs, setDocs] = useLocalState<LegalDoc[]>("lv4:docs", SEED_DOCUMENTS);
-  const [evidence, setEvidence] = useLocalState<EvidenceItem[]>("lv4:evidence", SEED_EVIDENCE);
-  const [audit, setAudit] = useLocalState<ChainLink[]>("lv4:audit", SEED_AUDIT);
-  const [logins, setLogins] = useLocalState<LoginEvent[]>("lv4:logins", SEED_LOGINS);
-  const [security, setSecurity] = useLocalState<SecurityEvent[]>("lv4:security", SEED_SECURITY);
-  const [notices, setNotices] = useLocalState<Notice[]>("lv4:notices", SEED_NOTICES);
+  const [users, setUsers] = useLocalState<User[]>("lv4:users", []);
+  const [courts, setCourts] = useLocalState<Court[]>("lv4:courts", []);
+  const [cases, setCases] = useLocalState<CaseFile[]>("lv4:cases", []);
+  const [docs, setDocs] = useLocalState<LegalDoc[]>("lv4:docs", []);
+  const [evidence, setEvidence] = useLocalState<EvidenceItem[]>("lv4:evidence", []);
+  const [audit, setAudit] = useLocalState<ChainLink[]>("lv4:audit", []);
+  const [logins, setLogins] = useLocalState<LoginEvent[]>("lv4:logins", []);
+  const [security, setSecurity] = useLocalState<SecurityEvent[]>("lv4:security", []);
+  const [notices, setNotices] = useLocalState<Notice[]>("lv4:notices", []);
 
   const COURTS = courts;
 

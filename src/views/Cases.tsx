@@ -551,7 +551,27 @@ function EditModal({ p, d, onClose }: { p: CasesProps; d: LegalDoc; onClose: () 
   const t = useT();
   const [note, setNote] = useState("");
   const [body, setBody] = useState(d.versions[d.versions.length - 1].body);
+  const [fileName, setFileName] = useState<string>("");
   const valid = note.trim().length >= 4 && body.trim().length >= 20;
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setFileName(file.name);
+
+    // Read file content
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      setBody(content);
+    };
+    reader.onerror = () => {
+      alert("Error reading file. Please try again.");
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <Modal onClose={onClose} wide>
       <ModalHead title={`${t("act.edit")} · ${d.id}`} sub={`creates v${d.versions.length + 1} — v${d.versions.length} is preserved untouched`} onClose={onClose} />
@@ -568,8 +588,34 @@ function EditModal({ p, d, onClose }: { p: CasesProps; d: LegalDoc; onClose: () 
           <label className={labelCls}>Change description (required, ledgered)</label>
           <input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Annexure C substituted; exhibit list renumbered" />
         </div>
+
         <div>
-          <label className={labelCls}>Document text</label>
+          <label className={labelCls}>Replace with file (optional)</label>
+          <div className="border-2 border-dashed border-line rounded-lg p-4 text-center hover:border-navy transition-colors">
+            <input
+              type="file"
+              id="edit-file-upload"
+              accept=".txt,.pdf,.doc,.docx,.rtf"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <label
+              htmlFor="edit-file-upload"
+              className="cursor-pointer flex flex-col items-center gap-2"
+            >
+              <IcUpload c="w-6 h-6 text-ink3" />
+              <span className="text-[12px] text-ink2">
+                {fileName ? fileName : "Click to select a replacement file"}
+              </span>
+              <span className="text-[10px] text-ink3">
+                Supported: TXT, PDF, DOC, DOCX, RTF
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label className={labelCls}>Document text (editable)</label>
           <textarea className={`${inputCls} min-h-[220px] font-mono text-[12.5px] leading-relaxed`} value={body} onChange={(e) => setBody(e.target.value)} />
         </div>
         <div className="flex justify-end gap-2">
@@ -625,7 +671,32 @@ function UploadModal({ p, c, onClose }: { p: CasesProps; c: CaseFile; onClose: (
   const [note, setNote] = useState("Initial upload");
   const [body, setBody] = useState("");
   const [review, setReview] = useState(true);
+  const [fileName, setFileName] = useState<string>("");
   const valid = title.trim().length > 5 && body.trim().length >= 30;
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setFileName(file.name);
+    
+    // Auto-fill title if empty
+    if (!title) {
+      setTitle(file.name.replace(/\.[^/.]+$/, ""));
+    }
+
+    // Read file content
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      setBody(content);
+    };
+    reader.onerror = () => {
+      alert("Error reading file. Please try again.");
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <Modal onClose={onClose} wide>
       <ModalHead title={t("act.upload")} sub={`${c.id} · v1 will be hashed & anchored to the version chain`} onClose={onClose} />
@@ -638,6 +709,31 @@ function UploadModal({ p, c, onClose }: { p: CasesProps; c: CaseFile; onClose: (
           onClose();
         }}
       >
+        <div>
+          <label className={labelCls}>Select Document File</label>
+          <div className="border-2 border-dashed border-line rounded-lg p-6 text-center hover:border-navy transition-colors">
+            <input
+              type="file"
+              id="file-upload"
+              accept=".txt,.pdf,.doc,.docx,.rtf"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <label
+              htmlFor="file-upload"
+              className="cursor-pointer flex flex-col items-center gap-2"
+            >
+              <IcUpload c="w-8 h-8 text-ink3" />
+              <span className="text-[13px] text-ink2">
+                {fileName ? fileName : "Click to select a file or drag and drop"}
+              </span>
+              <span className="text-[11px] text-ink3">
+                Supported: TXT, PDF, DOC, DOCX, RTF
+              </span>
+            </label>
+          </div>
+        </div>
+
         <div>
           <label className={labelCls}>Title</label>
           <input className={inputCls} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Charge sheet u/s 173 CrPC" />
@@ -661,8 +757,8 @@ function UploadModal({ p, c, onClose }: { p: CasesProps; c: CaseFile; onClose: (
           </div>
         </div>
         <div>
-          <label className={labelCls}>Document text</label>
-          <textarea className={`${inputCls} min-h-[180px] font-mono text-[12.5px] leading-relaxed`} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Full text of the record…" />
+          <label className={labelCls}>Document text (editable)</label>
+          <textarea className={`${inputCls} min-h-[180px] font-mono text-[12.5px] leading-relaxed`} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Full text of the record or file content will appear here…" />
         </div>
         <label className="flex items-center gap-2 text-[12.5px] text-ink2 cursor-pointer">
           <input type="checkbox" checked={review} onChange={(e) => setReview(e.target.checked)} className="w-4 h-4 accent-navy" />

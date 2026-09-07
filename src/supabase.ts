@@ -89,3 +89,69 @@ export async function sendPersonCodeEmail(p: { to: string; phone?: string; name:
     return false;
   }
 }
+
+/** Record a login attempt in the login_history table */
+export async function recordLoginAttempt(params: {
+  userId?: string;
+  userCode?: string;
+  email: string;
+  ipAddress: string;
+  userAgent: string;
+  deviceInfo: string;
+  location: string;
+  status: "SUCCESS" | "FAILED" | "LOCKED" | "LOGOUT";
+  failureReason?: string;
+  attemptNumber?: number;
+  sessionToken?: string;
+}): Promise<{ ok: boolean; loginId?: string; error?: string }> {
+  if (!supabase) return { ok: false, error: "not-configured" };
+  try {
+    const { data, error } = await supabase.rpc("record_login_attempt", {
+      p_user_id: params.userId || null,
+      p_user_code: params.userCode || null,
+      p_email: params.email,
+      p_ip_address: params.ipAddress,
+      p_user_agent: params.userAgent,
+      p_device_info: params.deviceInfo,
+      p_location: params.location,
+      p_status: params.status,
+      p_failure_reason: params.failureReason || null,
+      p_attempt_number: params.attemptNumber || 1,
+      p_session_token: params.sessionToken || null,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, loginId: data };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+}
+
+/** Get recent login history for a user */
+export async function getUserLoginHistory(userId: string, limit = 50): Promise<{ ok: boolean; data?: any[]; error?: string }> {
+  if (!supabase) return { ok: false, error: "not-configured" };
+  try {
+    const { data, error } = await supabase.rpc("get_user_login_history", {
+      p_user_id: userId,
+      p_limit: limit,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+}
+
+/** Count recent failed login attempts */
+export async function countRecentFailedLogins(email: string, minutes = 60): Promise<{ ok: boolean; count?: number; error?: string }> {
+  if (!supabase) return { ok: false, error: "not-configured" };
+  try {
+    const { data, error } = await supabase.rpc("count_recent_failed_logins", {
+      p_email: email,
+      p_minutes: minutes,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true, count: data };
+  } catch (e) {
+    return { ok: false, error: String(e) };
+  }
+}

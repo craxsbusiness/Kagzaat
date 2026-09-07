@@ -390,6 +390,18 @@ function Gateway(p: Props) {
                   </>
                 )}
 
+                {step === "setup" && pending && totpSetup && (
+                  <TotpSetup
+                    user={pending}
+                    secret={totpSetup.secret}
+                    recoveryCodes={totpSetup.recoveryCodes}
+                    onDone={() => {
+                      setTotpSetup(null);
+                      setStep("sec");
+                    }}
+                  />
+                )}
+
                 {step === "sec" && pending && (
                   <>
                     <header className="px-7 pt-4 pb-3">
@@ -438,6 +450,68 @@ function Gateway(p: Props) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ================================================================== */
+/* TOTP Setup — QR code + recovery codes for first-time authenticator  */
+/* ================================================================== */
+function TotpSetup({ user, secret, recoveryCodes, onDone }: { user: User; secret: string; recoveryCodes: string[]; onDone: () => void }) {
+  const t = useT();
+  const { copied, copy } = useCopy();
+  const [qrDataUrl, setQrDataUrl] = useState<string>("");
+
+  useEffect(() => {
+    const uri = generateOTPAuthURI(secret, user.email, "LexVault");
+    QRCode.toDataURL(uri, { margin: 1, scale: 8 }).then(setQrDataUrl);
+  }, [secret, user.email]);
+
+  return (
+    <div className="px-7 py-6 space-y-5">
+      <div>
+        <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#e0b968]">First-time setup</p>
+        <h2 className="font-display font-semibold uppercase tracking-wide text-[22px] mt-1">Set up authenticator</h2>
+        <p className="text-[12.5px] text-paper/55 mt-1.5">Scan this QR code with Google Authenticator, Authy, or any TOTP app</p>
+      </div>
+
+      <div className="flex justify-center">
+        {qrDataUrl ? (
+          <img src={qrDataUrl} alt="QR Code" className="w-48 h-48 bg-paper p-2 rounded-lg" />
+        ) : (
+          <div className="w-48 h-48 bg-paper/10 rounded-lg flex items-center justify-center">
+            <p className="text-paper/40 text-sm">Loading...</p>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/50 mb-1">Or enter manually:</p>
+        <div className="flex items-center gap-2 bg-navy2/60 border border-navyline rounded-lg px-3 py-2">
+          <code className="flex-1 font-mono text-[13px] text-[#e0b968] tracking-wider break-all">{secret}</code>
+          <button
+            onClick={() => copy(secret, "secret")}
+            className="text-paper/50 hover:text-paper transition-colors"
+            aria-label="Copy secret"
+          >
+            {copied === "secret" ? <IcCheck c="w-4 h-4 text-green2" /> : <IcCopy c="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper/50 mb-2">Recovery codes (save these!):</p>
+        <div className="bg-navy2/60 border border-navyline rounded-lg p-3 grid grid-cols-2 gap-2">
+          {recoveryCodes.map((code, i) => (
+            <code key={i} className="font-mono text-[11px] text-paper/70">{code}</code>
+          ))}
+        </div>
+        <p className="text-[10px] text-paper/40 mt-2">Use these if you lose access to your authenticator app</p>
+      </div>
+
+      <Btn kind="green" className="w-full !py-3" onClick={onDone}>
+        <IcCheck c="w-4 h-4" /> I've saved my codes — continue
+      </Btn>
     </div>
   );
 }

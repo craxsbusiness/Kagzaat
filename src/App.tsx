@@ -527,6 +527,16 @@ function Portal() {
     return personCode;
   };
 
+  const saveTOTP = (userId: string, secret: string, recoveryCodes: string[]) => {
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId
+          ? { ...u, totpSecret: secret, recoveryCodesHashed: recoveryCodes.map((c) => c.replace(/-/g, "")) }
+          : u
+      )
+    );
+  };
+
   const addCourt = (pp: { name: string; level: string; location: string }) => {
     if (!user) return;
     const loc = pp.location.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase() || "GEN";
@@ -649,6 +659,7 @@ function Portal() {
         onLogin={onLogin}
         logLoginEvent={pushLogin}
         onSignup={signup}
+        onSaveTOTP={saveTOTP}
         pushSecurity={pushSecurity}
         notice={expiredNotice}
         onBackToLanding={() => setGateMode("landing")}

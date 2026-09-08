@@ -4,9 +4,34 @@
 -- ============================================================================
 
 -- Drop existing tables if they exist (for clean setup)
+DROP TABLE IF EXISTS registry CASCADE;
 DROP TABLE IF EXISTS login_history CASCADE;
 DROP TABLE IF EXISTS user_sessions CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
+
+-- ============================================================================
+-- REGISTRY TABLE
+-- Stores all application data for cross-device sync
+-- ============================================================================
+CREATE TABLE registry (
+  id TEXT PRIMARY KEY,
+  payload JSONB NOT NULL DEFAULT '{}',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable Row Level Security
+ALTER TABLE registry ENABLE ROW LEVEL SECURITY;
+
+-- Allow anonymous access for sync (public read/write)
+CREATE POLICY "Allow public read" ON registry FOR SELECT USING (true);
+CREATE POLICY "Allow public write" ON registry FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update" ON registry FOR UPDATE USING (true);
+
+-- Index for faster lookups
+CREATE INDEX idx_registry_updated_at ON registry(updated_at DESC);
+
+-- Enable realtime for cross-device sync
+ALTER PUBLICATION supabase_realtime ADD TABLE registry;
 
 -- ============================================================================
 -- USERS TABLE

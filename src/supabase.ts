@@ -90,6 +90,45 @@ export async function sendPersonCodeEmail(p: { to: string; phone?: string; name:
   }
 }
 
+/* ================================================================== */
+/* Data Sync Functions - Save/Load all app data to Supabase           */
+/* ================================================================== */
+
+export async function syncAllData(data: {
+  users: any[];
+  courts: any[];
+  cases: any[];
+  docs: any[];
+  evidence: any[];
+  audit: any[];
+  logins: any[];
+  security: any[];
+  notices: any[];
+}): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('app_data').upsert({
+      id: 'main',
+      data: data,
+      updated_at: new Date().toISOString()
+    });
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function loadAllData(): Promise<any | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.from('app_data').select('data').eq('id', 'main').single();
+    if (error || !data) return null;
+    return data.data;
+  } catch {
+    return null;
+  }
+}
+
 /** Record a login attempt in the login_history table */
 export async function recordLoginAttempt(params: {
   userId?: string;

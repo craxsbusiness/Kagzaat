@@ -11,8 +11,8 @@ import { supabase, isSupabaseConfigured } from "./supabase";
 /* Prerequisite: run supabase/schema.sql once in the SQL editor.       */
 /* ================================================================== */
 
-export type SyncKey = "users" | "cases" | "docs" | "evidence";
-export const SYNC_KEYS: SyncKey[] = ["users", "cases", "docs", "evidence"];
+export type SyncKey = "users" | "courts" | "cases" | "docs" | "evidence" | "audit" | "logins" | "security" | "notices";
+export const SYNC_KEYS: SyncKey[] = ["users", "courts", "cases", "docs", "evidence", "audit", "logins", "security", "notices"];
 
 export interface RegistryRow {
   id: SyncKey;

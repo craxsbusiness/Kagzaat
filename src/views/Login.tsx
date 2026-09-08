@@ -28,7 +28,7 @@ const ALL_ROLES: RoleId[] = ["JUDGE", "LAWYER", "ACCUSED", "VICTIM", "POLICE", "
 const field = "w-full bg-navy2/60 border border-navyline px-3 py-2.5 text-[14px] text-paper placeholder:text-paper/35 focus:outline-none focus:border-[#e0b968] transition-colors";
 const label = "font-mono text-[9.5px] uppercase tracking-[0.18em] text-paper/55 block mb-1.5";
 
-const PHONE_RE = /^[+]?[\d\s\-()]{8,17}$/;
+const PHONE_RE = /^[+]?[\d\s\-()]{7,20}$/;
 
 export default function Login(p: Props) {
   return <Gateway {...p} />;
@@ -584,11 +584,15 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
     ans.trim().length >= 2;
 
   const submit = () => {
+    console.log("Registration attempt:", { name, email, phone, role, okPw, okPhone, okQ, valid });
     if (!valid) {
-      setErr(!okPw ? "Password must be at least 8 characters." : pw !== pw2 ? "Passwords do not match." : !okPhone ? t("signup.phoneBad") : !okQ ? "Write your custom question." : "Complete all fields.");
+      const errorMsg = !okPw ? "Password must be at least 8 characters." : pw !== pw2 ? "Passwords do not match." : !okPhone ? "Invalid phone number format." : !okQ ? "Write your custom question." : "Complete all fields.";
+      console.error("Validation failed:", errorMsg);
+      setErr(errorMsg);
       setShake((s) => s + 1);
       return;
     }
+    console.log("Calling onSignup...");
     const code = p.onSignup({
       name: name.trim(),
       role,
@@ -598,6 +602,7 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
       secQuestion: qCustom ? qText.trim() : SEC_QUESTIONS[qIdx][lang],
       secAnswer: ans,
     });
+    console.log("onSignup returned:", code);
     if (code === null) {
       setErr(t("signup.dupe"));
       setShake((s) => s + 1);

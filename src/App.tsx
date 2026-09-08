@@ -568,21 +568,27 @@ function Portal() {
 
   /* ---------------- signup · public self-registration + founding registrar ---------------- */
   const signup: (sp: { name: string; role: RoleId; email: string; phone: string; password: string; secQuestion: string; secAnswer: string }) => string | null = (sp) => {
+    console.log("=== SIGNUP FUNCTION CALLED ===");
+    console.log("Signup data:", sp);
     const first = users.length === 0;
     const role: RoleId = first ? "ADMIN" : sp.role;
+    console.log("First user?", first, "Role:", role);
 
     /* VICTIM and ACCUSED cannot self-register - only police can create their accounts */
     if (!first && (role === "VICTIM" || role === "ACCUSED")) {
+      console.log("REJECTED: Victim/Accused cannot self-register");
       log("USER_CREATED", { detail: `Signup rejected — ${ROLE_LABEL[role]} cannot self-register. Contact police to create account.`, actor: sp.name, role: ROLE_LABEL[role] });
       return null;
     }
 
     if (!first && users.some((x) => x.email.toLowerCase() === sp.email.toLowerCase())) {
+      console.log("REJECTED: Email already registered");
       log("USER_CREATED", { detail: `Signup rejected — email already registered (${sp.email})`, actor: sp.name, role: ROLE_LABEL[role] });
       return null;
     }
 
     const personCode = mintPersonCode();
+    console.log("Generated person code:", personCode);
     const nu: User = {
       id: uid("USR"),
       name: sp.name,
@@ -607,19 +613,26 @@ function Portal() {
       secAnswerHash: hashSecret(sp.secAnswer),
       personCode,
     };
-    setUsers((prev) => [...prev, nu]);
+    console.log("Created user object:", nu);
+    setUsers((prev) => {
+      console.log("Updating users from", prev.length, "to", prev.length + 1);
+      return [...prev, nu];
+    });
     dispatchPersonCode(nu);
 
     if (first) {
+      console.log("First user - logging REGISTRY_PROVISIONED");
       log("REGISTRY_PROVISIONED", {
         detail: `Founding registrar ${sp.name} (${nu.id}) provisioned — the registry's first permanent entry · person code ${personCode} issued`,
         actor: sp.name,
         role: ROLE_LABEL.ADMIN,
       });
     } else {
+      console.log("Not first user - logging USER_CREATED");
       log("USER_CREATED", { detail: `${sp.name} self-registered as ${ROLE_LABEL[role]} (${nu.id}) · phone ${sp.phone} · person code ${personCode} issued`, actor: sp.name, role: ROLE_LABEL[role] });
       notify(nu.id, "SYSTEM", `Welcome ${sp.name}. Your person code is ${personCode}. Case files appear once the registry links you as a party.`);
     }
+    console.log("=== SIGNUP COMPLETE, returning personCode:", personCode, "===");
     return personCode;
   };
 

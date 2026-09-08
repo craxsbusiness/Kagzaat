@@ -44,7 +44,7 @@ function Portal() {
   const prefs = usePrefs();
   const t = prefs.t;
 
-  /* ---------------- persistent state (starts EMPTY) ---------------- */
+  /* ---------------- persistent state with Supabase sync ---------------- */
   const [session, setSession] = useLocalState<Session | null>("lv4:session", null);
   const [users, setUsers] = useLocalState<User[]>("lv4:users", []);
   const [courts, setCourts] = useLocalState<Court[]>("lv4:courts", []);
@@ -55,6 +55,57 @@ function Portal() {
   const [logins, setLogins] = useLocalState<LoginEvent[]>("lv4:logins", []);
   const [security, setSecurity] = useLocalState<SecurityEvent[]>("lv4:security", []);
   const [notices, setNotices] = useLocalState<Notice[]>("lv4:notices", []);
+
+  /* ---------------- Sync to Supabase on changes ---------------- */
+  useEffect(() => {
+    if (syncAvailable() && users.length > 0) {
+      upsertRegistryRow("users", users);
+    }
+  }, [users]);
+
+  useEffect(() => {
+    if (syncAvailable() && courts.length > 0) {
+      upsertRegistryRow("courts", courts);
+    }
+  }, [courts]);
+
+  useEffect(() => {
+    if (syncAvailable() && cases.length > 0) {
+      upsertRegistryRow("cases", cases);
+    }
+  }, [cases]);
+
+  useEffect(() => {
+    if (syncAvailable() && docs.length > 0) {
+      upsertRegistryRow("docs", docs);
+    }
+  }, [docs]);
+
+  useEffect(() => {
+    if (syncAvailable() && evidence.length > 0) {
+      upsertRegistryRow("evidence", evidence);
+    }
+  }, [evidence]);
+
+  /* ---------------- Load from Supabase on startup ---------------- */
+  useEffect(() => {
+    if (!syncAvailable()) return;
+    
+    const loadFromSupabase = async () => {
+      const rows = await fetchRegistryRows();
+      rows.forEach((row) => {
+        if (Array.isArray(row.payload) && row.payload.length > 0) {
+          if (row.id === "users") setUsers(row.payload as User[]);
+          else if (row.id === "courts") setCourts(row.payload as Court[]);
+          else if (row.id === "cases") setCases(row.payload as CaseFile[]);
+          else if (row.id === "docs") setDocs(row.payload as LegalDoc[]);
+          else if (row.id === "evidence") setEvidence(row.payload as EvidenceItem[]);
+        }
+      });
+    };
+    
+    loadFromSupabase();
+  }, []);
 
   const COURTS = courts;
 

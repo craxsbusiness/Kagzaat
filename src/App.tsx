@@ -58,50 +58,68 @@ function Portal() {
 
   /* ---------------- Sync to Supabase on changes ---------------- */
   useEffect(() => {
-    if (syncAvailable() && users.length > 0) {
+    if (syncAvailable()) {
+      console.log('[Sync] Syncing users to Supabase:', users.length, 'users');
       upsertRegistryRow("users", users);
+    } else {
+      console.log('[Sync] Supabase not available for users sync');
     }
   }, [users]);
 
   useEffect(() => {
-    if (syncAvailable() && courts.length > 0) {
+    if (syncAvailable()) {
+      console.log('[Sync] Syncing courts to Supabase:', courts.length, 'courts');
       upsertRegistryRow("courts", courts);
     }
   }, [courts]);
 
   useEffect(() => {
-    if (syncAvailable() && cases.length > 0) {
+    if (syncAvailable()) {
+      console.log('[Sync] Syncing cases to Supabase:', cases.length, 'cases');
       upsertRegistryRow("cases", cases);
     }
   }, [cases]);
 
   useEffect(() => {
-    if (syncAvailable() && docs.length > 0) {
+    if (syncAvailable()) {
+      console.log('[Sync] Syncing docs to Supabase:', docs.length, 'docs');
       upsertRegistryRow("docs", docs);
     }
   }, [docs]);
 
   useEffect(() => {
-    if (syncAvailable() && evidence.length > 0) {
+    if (syncAvailable()) {
+      console.log('[Sync] Syncing evidence to Supabase:', evidence.length, 'items');
       upsertRegistryRow("evidence", evidence);
     }
   }, [evidence]);
 
   /* ---------------- Load from Supabase on startup ---------------- */
   useEffect(() => {
-    if (!syncAvailable()) return;
+    console.log('[Sync] Checking if Supabase is available...');
+    if (!syncAvailable()) {
+      console.log('[Sync] Supabase NOT available. Check your .env file for VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
+      return;
+    }
     
+    console.log('[Sync] Supabase is available. Loading data...');
     const loadFromSupabase = async () => {
-      const rows = await fetchRegistryRows();
-      rows.forEach((row) => {
-        if (Array.isArray(row.payload) && row.payload.length > 0) {
-          if (row.id === "users") setUsers(row.payload as User[]);
-          else if (row.id === "courts") setCourts(row.payload as Court[]);
-          else if (row.id === "cases") setCases(row.payload as CaseFile[]);
-          else if (row.id === "docs") setDocs(row.payload as LegalDoc[]);
-          else if (row.id === "evidence") setEvidence(row.payload as EvidenceItem[]);
-        }
-      });
+      try {
+        const rows = await fetchRegistryRows();
+        console.log('[Sync] Loaded rows from Supabase:', rows);
+        rows.forEach((row) => {
+          if (Array.isArray(row.payload)) {
+            console.log('[Sync] Loading', row.id, 'with', row.payload.length, 'items');
+            if (row.id === "users") setUsers(row.payload as User[]);
+            else if (row.id === "courts") setCourts(row.payload as Court[]);
+            else if (row.id === "cases") setCases(row.payload as CaseFile[]);
+            else if (row.id === "docs") setDocs(row.payload as LegalDoc[]);
+            else if (row.id === "evidence") setEvidence(row.payload as EvidenceItem[]);
+          }
+        });
+      } catch (error) {
+        console.error('[Sync] Error loading from Supabase:', error);
+      }
     };
     
     loadFromSupabase();

@@ -25,10 +25,18 @@ const env = (import.meta as unknown as { env?: Record<string, string | undefined
 const SUPABASE_URL = env.VITE_SUPABASE_URL ?? "";
 const SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY ?? "";
 
+console.log('[Supabase] Environment check:');
+console.log('[Supabase] VITE_SUPABASE_URL:', SUPABASE_URL ? '✓ Set' : '✗ Missing');
+console.log('[Supabase] VITE_SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? '✓ Set' : '✗ Missing');
+
 export const supabase: SupabaseClient | null =
   SUPABASE_URL.length > 0 && SUPABASE_ANON_KEY.length > 0 ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-export const isSupabaseConfigured = (): boolean => supabase !== null;
+export const isSupabaseConfigured = (): boolean => {
+  const configured = supabase !== null;
+  console.log('[Supabase] isSupabaseConfigured:', configured);
+  return configured;
+};
 
 /** Factor-2 delivery — asks Supabase to email a one-time code (or magic link) to the user.
  *  The link returns the browser to this portal with a token in the URL hash,

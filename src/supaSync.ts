@@ -23,15 +23,38 @@ export interface RegistryRow {
 export const syncAvailable = (): boolean => isSupabaseConfigured();
 
 export async function fetchRegistryRows(): Promise<RegistryRow[]> {
-  if (!supabase) return [];
+  if (!supabase) {
+    console.error('[SupaSync] Supabase client is null');
+    return [];
+  }
+  console.log('[SupaSync] Fetching registry rows from Supabase...');
   const { data, error } = await supabase.from("registry").select("id,payload,updated_at");
-  if (error || !data) return [];
+  if (error) {
+    console.error('[SupaSync] Error fetching registry:', error);
+    return [];
+  }
+  if (!data) {
+    console.log('[SupaSync] No data returned from registry table');
+    return [];
+  }
+  console.log('[SupaSync] Successfully fetched', data.length, 'rows');
   return data as unknown as RegistryRow[];
 }
 
 export function upsertRegistryRow(key: SyncKey, payload: unknown): void {
-  if (!supabase) return;
-  void supabase.from("registry").upsert({ id: key, payload, updated_at: new Date().toISOString() });
+  if (!supabase) {
+    console.error('[SupaSync] Cannot upsert - Supabase client is null');
+    return;
+  }
+  console.log('[SupaSync] Upserting', key, 'to Supabase with', Array.isArray(payload) ? payload.length : 'non-array', 'items');
+  supabase.from("registry").upsert({ id: key, payload, updated_at: new Date().toISOString() })
+    .then(({ error }) => {
+      if (error) {
+        console.error('[SupaSync] Error upserting', key, ':', error);
+      } else {
+        console.log('[SupaSync] Successfully upserted', key);
+      }
+    });
 }
 
 export type RowHandler = (row: RegistryRow) => void;

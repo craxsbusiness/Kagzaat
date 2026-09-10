@@ -5,6 +5,8 @@ import type { ChainLink } from "./lib";
 /* ================================================================== */
 export type RoleId = "JUDGE" | "LAWYER" | "ACCUSED" | "VICTIM" | "POLICE" | "ADMIN" | "AUDITOR";
 
+export type Gender = "MALE" | "FEMALE" | "OTHER" | "PREFER_NOT_TO_SAY";
+
 export interface User {
   id: string;
   name: string;
@@ -13,6 +15,7 @@ export interface User {
   courtIds: string[];
   stationId?: string;
   email: string;
+  gender?: Gender;
   keyFp: string;
   status: "ACTIVE" | "SUSPENDED";
   clearanceNote: string;

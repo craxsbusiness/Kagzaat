@@ -283,8 +283,41 @@ function Portal() {
     const c = d ? cases.find((x) => x.id === d.caseId) : null;
     if (!d || !c || !canDownload(user, c, d)) return;
     const wm = `WM-${session?.userId.slice(-4).toUpperCase() ?? "0000"}-${Math.floor(1000 + Math.random() * 8999)}`;
-    log("DOC_DOWNLOADED", { caseId: c.id, docId, detail: `Watermarked copy issued · ${wm} · time-limited link` });
-    toast("success", "Download issued", `Certified copy · watermark ${wm} · traceable to your session.`);
+    
+    // Get the latest version content
+    const latestVersion = d.versions[d.versions.length - 1];
+    const content = latestVersion?.body || "Document content not available";
+    
+    // Create document metadata
+    const metadata = [
+      `Document ID: ${d.id}`,
+      `Case: ${c.id} - ${c.title}`,
+      `Type: ${d.type}`,
+      `Classification: ${d.classification}`,
+      `Version: v${latestVersion?.v || 1}`,
+      `Downloaded by: ${user.name} (${user.role})`,
+      `Download date: ${new Date().toISOString()}`,
+      `Watermark: ${wm}`,
+      `SHA-256: ${latestVersion?.hash || "N/A"}`,
+      "",
+      "--- DOCUMENT CONTENT ---",
+      "",
+      content
+    ].join("\n");
+    
+    // Create and download file
+    const blob = new Blob([metadata], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${d.id}_v${latestVersion?.v || 1}_${wm}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    log("DOC_DOWNLOADED", { caseId: c.id, docId, detail: `Watermarked copy saved to device · ${wm}` });
+    toast("success", "Document downloaded", `Saved to your device · watermark ${wm}`);
   };
 
   const viewDoc = (docId: string) => {
@@ -520,7 +553,7 @@ function Portal() {
   };
 
   /* ---------------- signup · public self-registration + founding registrar ---------------- */
-  const signup: (sp: { name: string; role: RoleId; email: string; phone: string; password: string; secQuestion: string; secAnswer: string }) => string | null = (sp) => {
+  const signup: (sp: { name: string; role: RoleId; email: string; phone: string; gender?: "MALE" | "FEMALE" | "OTHER" | "PREFER_NOT_TO_SAY"; password: string; secQuestion: string; secAnswer: string }) => string | null = (sp) => {
     console.log("=== SIGNUP FUNCTION CALLED ===");
     console.log("Signup data:", sp);
     const first = users.length === 0;
@@ -551,6 +584,7 @@ function Portal() {
       stationId: undefined,
       email: sp.email,
       phone: sp.phone || undefined,
+      gender: sp.gender || "PREFER_NOT_TO_SAY",
       keyFp: keyFingerprint(),
       status: "ACTIVE",
       clearanceNote: first

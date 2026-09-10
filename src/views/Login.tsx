@@ -16,7 +16,7 @@ interface Props {
   onLogin: (userId: string, device: string, ip: string) => void;
   logLoginEvent: (ev: Omit<LoginEvent, "id" | "ts">) => void;
   /** returns the new person code, or null if the email is already registered */
-  onSignup: (p: { name: string; role: RoleId; email: string; phone: string; password: string; secQuestion: string; secAnswer: string }) => string | null;
+  onSignup: (p: { name: string; role: RoleId; email: string; phone: string; gender?: "MALE" | "FEMALE" | "OTHER" | "PREFER_NOT_TO_SAY"; password: string; secQuestion: string; secAnswer: string }) => string | null;
   /** saves TOTP secret and recovery codes for a user */
   onSaveTOTP: (userId: string, secret: string, recoveryCodes: string[]) => void;
   pushSecurity?: (severity: "INFO" | "WARN" | "CRITICAL", kind: string, detail: string, userId?: string) => void;
@@ -546,6 +546,7 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
   const [role, setRole] = useState<RoleId>("ADMIN");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [gender, setGender] = useState<"MALE" | "FEMALE" | "OTHER" | "PREFER_NOT_TO_SAY">("PREFER_NOT_TO_SAY");
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
   const [qIdx, setQIdx] = useState(0);
@@ -603,6 +604,7 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
       role,
       email: email.trim(),
       phone: phone.trim(),
+      gender,
       password: pw,
       secQuestion: qCustom ? qText.trim() : SEC_QUESTIONS[qIdx][lang],
       secAnswer: ans,
@@ -750,6 +752,15 @@ function SignupForm({ p, empty, onCreated }: { p: Props; empty: boolean; onCreat
                 <label className={label}>{t("signup.phone")}</label>
                 <input className={field} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t("signup.phonePh")} />
               </div>
+            </div>
+            <div>
+              <label className={label}>Gender</label>
+              <select className={`${field} !bg-navy2/90 cursor-pointer`} value={gender} onChange={(e) => setGender(e.target.value as any)}>
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Other</option>
+                <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+              </select>
             </div>
             <div>
               <label className={label}>{t("firstrun.email")}</label>

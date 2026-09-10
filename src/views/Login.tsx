@@ -12,6 +12,7 @@ interface Props {
   users: User[];
   initialMode?: "signin" | "signup";
   magicReturnId?: string | null;
+  initialSyncDone?: boolean;
   onLogin: (userId: string, device: string, ip: string) => void;
   logLoginEvent: (ev: Omit<LoginEvent, "id" | "ts">) => void;
   /** returns the new person code, or null if the email is already registered */
@@ -42,6 +43,7 @@ function Gateway(p: Props) {
   const { lang } = usePrefs();
   const toast = useToast();
   const empty = p.users.length === 0;
+  const initialSyncDone = p.initialSyncDone ?? true; // default true for backward compatibility
 
   const [mode, setMode] = useState<"signin" | "signup">(p.initialMode ?? (empty ? "signup" : "signin"));
   const [step, setStep] = useState<"creds" | "otp" | "sec" | "setup">("creds");
@@ -350,9 +352,12 @@ function Gateway(p: Props) {
                         </div>
                       </div>
                       {err && <p className="text-[12.5px] text-[#f0a48f] border-l-2 border-crimson pl-3">{err}</p>}
-                      <Btn type="submit" disabled={empty || otpSending} className="w-full !py-3 !text-[13px]">
-                        <IcKey c="w-4 h-4" /> {otpSending ? "…" : t("login.continue")}
+                      <Btn type="submit" disabled={empty || otpSending || !initialSyncDone} className="w-full !py-3 !text-[13px]">
+                        <IcKey c="w-4 h-4" /> {!initialSyncDone ? "Syncing..." : otpSending ? "…" : t("login.continue")}
                       </Btn>
+                      {!initialSyncDone && (
+                        <p className="text-[11px] text-paper/50 text-center mt-2">Syncing account data from cloud...</p>
+                      )}
                     </form>
 
                     <footer className="px-7 pb-5">

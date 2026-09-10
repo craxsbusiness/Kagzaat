@@ -56,7 +56,7 @@ The application will be available at `http://localhost:5173`
 
 3. **Run Database Schema**
    - Open Supabase Dashboard → SQL Editor
-   - Copy contents of `schema.sql`
+   - Copy contents of `supabase/schema.sql`
    - Paste and run the SQL
    - This creates all necessary tables and functions
 

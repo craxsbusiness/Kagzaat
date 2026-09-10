@@ -29,7 +29,7 @@ LexVault uses Supabase to track all login attempts and user sessions in a secure
 2. Select your project
 3. Go to **SQL Editor** (left sidebar)
 4. Click **New Query**
-5. Copy the entire contents of `schema.sql` file
+5. Copy the entire contents of `supabase/schema.sql` file
 6. Paste it into the SQL Editor
 7. Click **Run** (or press Ctrl+Enter / Cmd+Enter)
 
@@ -37,6 +37,7 @@ This will create:
 - `users` table - stores all user accounts
 - `login_history` table - tracks all login attempts
 - `user_sessions` table - manages active sessions
+- `registry` table - enables cross-device data sync
 - Helper functions for recording and querying data
 - Row Level Security (RLS) policies for data protection
 - Useful views for quick access to recent activity
@@ -46,10 +47,11 @@ This will create:
 After running the schema, verify the tables were created:
 
 1. Go to **Table Editor** in Supabase dashboard
-2. You should see three tables:
+2. You should see four tables:
    - `users`
    - `login_history`
    - `user_sessions`
+   - `registry`
 
 ### Step 3: Test Login Tracking
 

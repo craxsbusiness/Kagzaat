@@ -56,74 +56,9 @@ function Portal() {
   const [security, setSecurity] = useLocalState<SecurityEvent[]>("lv4:security", []);
   const [notices, setNotices] = useLocalState<Notice[]>("lv4:notices", []);
 
-  /* ---------------- Sync to Supabase on changes ---------------- */
-  useEffect(() => {
-    if (syncAvailable()) {
-      console.log('[Sync] Syncing users to Supabase:', users.length, 'users');
-      upsertRegistryRow("users", users);
-    } else {
-      console.log('[Sync] Supabase not available for users sync');
-    }
-  }, [users]);
-
-  useEffect(() => {
-    if (syncAvailable()) {
-      console.log('[Sync] Syncing courts to Supabase:', courts.length, 'courts');
-      upsertRegistryRow("courts", courts);
-    }
-  }, [courts]);
-
-  useEffect(() => {
-    if (syncAvailable()) {
-      console.log('[Sync] Syncing cases to Supabase:', cases.length, 'cases');
-      upsertRegistryRow("cases", cases);
-    }
-  }, [cases]);
-
-  useEffect(() => {
-    if (syncAvailable()) {
-      console.log('[Sync] Syncing docs to Supabase:', docs.length, 'docs');
-      upsertRegistryRow("docs", docs);
-    }
-  }, [docs]);
-
-  useEffect(() => {
-    if (syncAvailable()) {
-      console.log('[Sync] Syncing evidence to Supabase:', evidence.length, 'items');
-      upsertRegistryRow("evidence", evidence);
-    }
-  }, [evidence]);
-
-  /* ---------------- Load from Supabase on startup ---------------- */
-  useEffect(() => {
-    console.log('[Sync] Checking if Supabase is available...');
-    if (!syncAvailable()) {
-      console.log('[Sync] Supabase NOT available. Check your .env file for VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
-      return;
-    }
-    
-    console.log('[Sync] Supabase is available. Loading data...');
-    const loadFromSupabase = async () => {
-      try {
-        const rows = await fetchRegistryRows();
-        console.log('[Sync] Loaded rows from Supabase:', rows);
-        rows.forEach((row) => {
-          if (Array.isArray(row.payload)) {
-            console.log('[Sync] Loading', row.id, 'with', row.payload.length, 'items');
-            if (row.id === "users") setUsers(row.payload as User[]);
-            else if (row.id === "courts") setCourts(row.payload as Court[]);
-            else if (row.id === "cases") setCases(row.payload as CaseFile[]);
-            else if (row.id === "docs") setDocs(row.payload as LegalDoc[]);
-            else if (row.id === "evidence") setEvidence(row.payload as EvidenceItem[]);
-          }
-        });
-      } catch (error) {
-        console.error('[Sync] Error loading from Supabase:', error);
-      }
-    };
-    
-    loadFromSupabase();
-  }, []);
+  /* ---------------- Sync state ---------------- */
+  const syncOn = syncAvailable();
+  const [initialSyncDone, setInitialSyncDone] = useState(!syncOn); // true if sync not available
 
   const COURTS = courts;
 
@@ -768,7 +703,6 @@ function Portal() {
   };
 
   /* ---------------- Supabase realtime registry sync ---------------- */
-  const syncOn = syncAvailable();
   const lastSynced = useRef<Record<string, string>>({});
   const [syncState, setSyncState] = useState<"off" | "connecting" | "live">(syncOn ? "connecting" : "off");
 
@@ -778,10 +712,11 @@ function Portal() {
     lastSynced.current[row.id] = json;
     const arr = Array.isArray(row.payload) ? (row.payload as never[]) : [];
     if (row.id === "users") setUsers(arr as User[]);
+    else if (row.id === "courts") setCourts(arr as Court[]);
     else if (row.id === "cases") setCases(arr as CaseFile[]);
     else if (row.id === "docs") setDocs(arr as LegalDoc[]);
     else if (row.id === "evidence") setEvidence(arr as EvidenceItem[]);
-  }, [setUsers, setCases, setDocs, setEvidence]);
+  }, [setUsers, setCourts, setCases, setDocs, setEvidence]);
 
   /* pull the shared registry once on boot */
   useEffect(() => {
@@ -794,6 +729,7 @@ function Portal() {
         else lastSynced.current[r.id] = JSON.stringify(r.payload);
       });
       setSyncState("live");
+      setInitialSyncDone(true);
     });
     return () => { cancelled = true; };
   }, [syncOn, applyRemoteRow]);
@@ -837,6 +773,7 @@ function Portal() {
         users={users}
         initialMode={gateMode === "signup" ? "signup" : "signin"}
         magicReturnId={magicReturnId}
+        initialSyncDone={initialSyncDone}
         onLogin={onLogin}
         logLoginEvent={pushLogin}
         onSignup={signup}

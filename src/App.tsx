@@ -277,47 +277,113 @@ function Portal() {
     toast("success", "Digitally signed", "The signed version is now locked. Changes require a new revision.");
   };
 
-  const downloadDoc = (docId: string) => {
+  const downloadDoc = async (docId: string) => {
     if (!user) return;
     const d = docs.find((x) => x.id === docId);
     const c = d ? cases.find((x) => x.id === d.caseId) : null;
     if (!d || !c || !canDownload(user, c, d)) return;
     const wm = `WM-${session?.userId.slice(-4).toUpperCase() ?? "0000"}-${Math.floor(1000 + Math.random() * 8999)}`;
-    
-    // Get the latest version content
     const latestVersion = d.versions[d.versions.length - 1];
     const content = latestVersion?.body || "Document content not available";
-    
-    // Create document metadata
-    const metadata = [
-      `Document ID: ${d.id}`,
-      `Case: ${c.id} - ${c.title}`,
-      `Type: ${d.type}`,
-      `Classification: ${d.classification}`,
-      `Version: v${latestVersion?.v || 1}`,
-      `Downloaded by: ${user.name} (${user.role})`,
-      `Download date: ${new Date().toISOString()}`,
-      `Watermark: ${wm}`,
-      `SHA-256: ${latestVersion?.hash || "N/A"}`,
-      "",
-      "--- DOCUMENT CONTENT ---",
-      "",
-      content
-    ].join("\n");
-    
-    // Create and download file
-    const blob = new Blob([metadata], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${d.id}_v${latestVersion?.v || 1}_${wm}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    log("DOC_DOWNLOADED", { caseId: c.id, docId, detail: `Watermarked copy saved to device · ${wm}` });
-    toast("success", "Document downloaded", `Saved to your device · watermark ${wm}`);
+
+    try {
+      const { jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({ unit: "pt", format: "a4" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 56;
+      const contentWidth = pageWidth - margin * 2;
+      let y = margin;
+
+      // Header banner
+      pdf.setFillColor(18, 35, 58);
+      pdf.rect(0, 0, pageWidth, 72, "F");
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(20);
+      pdf.text("LEXVAULT", margin, 36);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(9);
+      pdf.text("CERTIFIED COPY — SECURE JUDICIAL DOCUMENT PORTAL", margin, 52);
+
+      // Watermark (diagonal, repeated)
+      pdf.setTextColor(200, 200, 200);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(48);
+      for (let wy = 150; wy < pageHeight; wy += 220) {
+        for (let wx = -80; wx < pageWidth; wx += 320) {
+          pdf.text(wm, wx, wy, { angle: 35 });
+        }
+      }
+
+      y = 100;
+      pdf.setTextColor(32, 32, 32);
+
+      // Metadata block
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(14);
+      pdf.text(d.title, margin, y);
+      y += 22;
+
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(10);
+      const meta: [string, string][] = [
+        ["Document ID", d.id],
+        ["Case", `${c.id} — ${c.title}`],
+        ["Type", d.type],
+        ["Classification", d.classification],
+        ["Version", `v${latestVersion?.v || 1} of ${d.versions.length}`],
+        ["Issued to", `${user.name} (${user.role})`],
+        ["Issued on", new Date().toLocaleString()],
+        ["SHA-256", latestVersion?.hash || "N/A"],
+      ];
+      for (const [k, v] of meta) {
+        pdf.setFont("helvetica", "bold");
+        pdf.text(`${k}:`, margin, y);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(String(v), margin + 100, y);
+        y += 14;
+      }
+      y += 10;
+
+      // Divider
+      pdf.setDrawColor(179, 39, 30);
+      pdf.setLineWidth(1.5);
+      pdf.line(margin, y, pageWidth - margin, y);
+      y += 20;
+
+      // Document body
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(11);
+      pdf.text("DOCUMENT CONTENT", margin, y);
+      y += 18;
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(10);
+
+      const lines = pdf.splitTextToSize(content, contentWidth);
+      for (const line of lines) {
+        if (y > pageHeight - margin) {
+          pdf.addPage();
+          y = margin;
+        }
+        pdf.text(line, margin, y);
+        y += 14;
+      }
+
+      // Footer on last page
+      y = pageHeight - 30;
+      pdf.setFontSize(8);
+      pdf.setTextColor(120, 120, 120);
+      pdf.text(`This is a certified copy issued by LexVault. Watermark: ${wm}`, margin, y);
+      pdf.text(`Page ${pdf.getNumberOfPages()}`, pageWidth - margin - 40, y);
+
+      pdf.save(`${d.id}_v${latestVersion?.v || 1}_${wm}.pdf`);
+      log("DOC_DOWNLOADED", { caseId: c.id, docId, detail: `PDF saved to device · ${wm}` });
+      toast("success", "PDF downloaded", `Saved to your device · watermark ${wm}`);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      toast("error", "Download failed", "Could not generate PDF. Please try again.");
+    }
   };
 
   const viewDoc = (docId: string) => {

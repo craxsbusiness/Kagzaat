@@ -118,7 +118,7 @@ export default function Landing({ stats, onEnter }: Props) {
             <IcScale c="w-5 h-5" />
           </span>
           <div>
-            <p className="font-display font-bold tracking-[0.2em] text-[19px] leading-none text-ink">LEXVAULT</p>
+            <p className="font-display font-bold tracking-[0.2em] text-[19px] leading-none text-ink">KAGZAAT</p>
             <p className="font-mono text-[8.5px] uppercase tracking-[0.2em] text-ink3 mt-1">{t("app.tag")}</p>
           </div>
         </div>
@@ -257,14 +257,14 @@ export default function Landing({ stats, onEnter }: Props) {
             <p className="text-[13px] text-ink2 max-w-xl leading-relaxed">{t("land.footer")}</p>
           </div>
           <div className="text-right">
-            <p className="font-display font-bold tracking-[0.2em] text-[15px] text-ink">LEXVAULT</p>
+            <p className="font-display font-bold tracking-[0.2em] text-[15px] text-ink">KAGZAAT</p>
             <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink3 mt-1">{t("land.demo")}</p>
           </div>
         </div>
       </footer>
 
       {/* language note for sr/seo */}
-      <span className="sr-only">{lang === "hi" ? "लेक्सवॉल्ट — सुरक्षित न्यायिक दस्तावेज़ पोर्टल" : "LexVault — secure judicial document portal"}</span>
+      <span className="sr-only">{lang === "hi" ? "कागज़ात — सुरक्षित न्यायिक दस्तावेज़ पोर्टल" : "Kagzaat — secure judicial document portal"}</span>
     </div>
   );
 }

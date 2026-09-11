@@ -25,7 +25,7 @@ const en: Record<string, string> = {
   "hdr.renews": "renews on activity",
   "hdr.expires": "Session expires soon",
   "hdr.logout": "Sign out",
-  "footer.line": "LexVault · immutable history, controlled modification · nothing is ever deleted",
+  "footer.line": "Kagzaat · immutable history, controlled modification · nothing is ever deleted",
   "footer.seal": "tamper-evident · hash-chained · append-only",
   "wm.copy": "CERTIFIED COPY",
 
@@ -195,7 +195,7 @@ const en: Record<string, string> = {
   "sync.off": "Local only",
 
   /* landing page */
-  "land.kicker": "LexVault · court of record",
+  "land.kicker": "Kagzaat · court of record",
   "land.h1": "Where every record stands —",
   "land.h1b": "and every record answers.",
   "land.sub": "A secure registry for the life of a case: from the first information report to the final order. Role-based dockets, per-version digests, and an audit chain that never forgets.",
@@ -217,7 +217,7 @@ const en: Record<string, string> = {
   "land.hw4t": "Conclude", "land.hw4d": "Closed or dismissed, the record is preserved read-only. Nothing is deleted.",
   "land.stCourts": "Courts", "land.stCases": "Case files", "land.stLedger": "Ledger links", "land.stUsers": "Principals",
   "land.live": "live from the registry",
-  "land.footer": "LexVault preserves immutable history with controlled modification — who, what, when, where, why, on every record.",
+  "land.footer": "Kagzaat preserves immutable history with controlled modification — who, what, when, where, why, on every record.",
   "land.demo": "Demonstration registry · legal validity follows notified e-governance frameworks.",
   "signup.namePh": "e.g. Meena Kumari",
   "signup.emailPh": "name@mail.example",
@@ -329,7 +329,7 @@ const hi: Record<string, string> = {
   "hdr.renews": "गतिविधि पर नवीनीकरण",
   "hdr.expires": "सत्र जल्द समाप्त होगा",
   "hdr.logout": "साइन आउट",
-  "footer.line": "लेक्सवॉल्ट · अपरिवर्तनीय इतिहास, नियंत्रित संशोधन · कुछ भी कभी हटाया नहीं जाता",
+  "footer.line": "कागज़ात · अपरिवर्तनीय इतिहास, नियंत्रित संशोधन · कुछ भी कभी हटाया नहीं जाता",
   "footer.seal": "छेड़छाड़-स्पष्ट · हैश-श्रृंखलित · केवल-जोड़ें",
   "wm.copy": "प्रमाणित प्रतिलिपि",
 
@@ -499,7 +499,7 @@ const hi: Record<string, string> = {
   "sync.off": "केवल लोकल",
 
   /* landing page */
-  "land.kicker": "लेक्सवॉल्ट · अभिलेख न्यायालय",
+  "land.kicker": "कागज़ात · अभिलेख न्यायालय",
   "land.h1": "जहाँ हर अभिलेख खड़ा है —",
   "land.h1b": "और हर अभिलेख उत्तर देता है।",
   "land.sub": "केस के पूरे जीवनकाल की सुरक्षित रजिस्ट्री: प्रथम सूचना रिपोर्ट से अंतिम आदेश तक। भूमिका-आधारित डॉकेट, प्रति-संस्करण सारांश, और एक ऑडिट श्रृंखला जो कभी नहीं भूलती।",
@@ -521,7 +521,7 @@ const hi: Record<string, string> = {
   "land.hw4t": "समापन", "land.hw4d": "बंद या खारिज — अभिलेख केवल-पठन रूप में सुरक्षित। कुछ भी हटाया नहीं जाता।",
   "land.stCourts": "न्यायालय", "land.stCases": "केस फ़ाइलें", "land.stLedger": "लेजर कड़ियाँ", "land.stUsers": "उपयोगकर्ता",
   "land.live": "रजिस्ट्री से लाइव",
-  "land.footer": "लेक्सवॉल्ट अपरिवर्तनीय इतिहास को नियंत्रित संशोधन के साथ सुरक्षित रखता है — हर अभिलेख पर कौन, क्या, कब, कहाँ, क्यों।",
+  "land.footer": "कागज़ात अपरिवर्तनीय इतिहास को नियंत्रित संशोधन के साथ सुरक्षित रखता है — हर अभिलेख पर कौन, क्या, कब, कहाँ, क्यों।",
   "land.demo": "प्रदर्शन रजिस्ट्री · विधिक वैधता अधिसूचित ई-गवर्नेंस ढाँचे के अनुसार।",
   "signup.namePh": "जैसे मीना कुमारी",
   "signup.emailPh": "naam@mail.example",
@@ -761,7 +761,7 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
     const el = document.getElementById("root");
     if (el) el.style.zoom = String(zoom);
     document.documentElement.lang = lang === "hi" ? "hi" : "en";
-    document.documentElement.style.setProperty("--wm-text", lang === "hi" ? '"प्रमाणित प्रतिलिपि · लेक्सवॉल्ट"' : '"CERTIFIED COPY · LEXVAULT"');
+    document.documentElement.style.setProperty("--wm-text", lang === "hi" ? '"CERTIFIED COPY · KAGZAAT"' : '"CERTIFIED COPY · KAGZAAT"');
   }, [zoom, lang]);
 
   const value = useMemo<Prefs>(

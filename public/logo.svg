@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="white"/>
+  
+  <!-- Open Book -->
+  <g transform="translate(256, 200)">
+    <path d="M 0 -60 L -100 -45 L -100 50 L 0 40 Z" fill="#e8f0f8"/>
+    <path d="M 0 -60 L 100 -45 L 100 50 L 0 40 Z" fill="#f5f9fc"/>
+    <rect x="-3" y="-60" width="6" height="100" fill="#1a3a5c" rx="2"/>
+    
+    <!-- Page lines -->
+    <line x1="-85" y1="-30" x2="-15" y2="-38" stroke="#c0d0e0" stroke-width="2"/>
+    <line x1="-85" y1="-15" x2="-15" y2="-23" stroke="#c0d0e0" stroke-width="2"/>
+    <line x1="-85" y1="0" x2="-15" y2="-8" stroke="#c0d0e0" stroke-width="2"/>
+    <line x1="-85" y1="15" x2="-15" y2="7" stroke="#c0d0e0" stroke-width="2"/>
+    
+    <line x1="85" y1="-30" x2="15" y2="-38" stroke="#c0d0e0" stroke-width="2"/>
+    <line x1="85" y1="-15" x2="15" y2="-23" stroke="#c0d0e0" stroke-width="2"/>
+    <line x1="85" y1="0" x2="15" y2="-8" stroke="#c0d0e0" stroke-width="2"/>
+    <line x1="85" y1="15" x2="15" y2="7" stroke="#c0d0e0" stroke-width="2"/>
+  </g>
+  
+  <!-- Lock Icon -->
+  <g transform="translate(256, 180)">
+    <rect x="-20" y="-5" width="40" height="30" fill="#d4af37" rx="4"/>
+    <path d="M -12 -5 L -12 -15 Q -12 -25 0 -25 Q 12 -25 12 -15 L 12 -5" stroke="#d4af37" stroke-width="4" fill="none"/>
+    <circle cx="0" cy="10" r="3" fill="#1a3a5c"/>
+    <rect x="-1" y="10" width="2" height="8" fill="#1a3a5c"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="256" y="320" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="#1a3a5c" text-anchor="middle">Kagzaat</text>
+  <text x="256" y="360" font-family="Arial, sans-serif" font-size="18" fill="#4a6a8a" text-anchor="middle" letter-spacing="3">SAFE DOCUMENTS • STRONG JUSTICE</text>
+</svg>

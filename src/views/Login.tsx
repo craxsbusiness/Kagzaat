@@ -231,7 +231,7 @@ function Gateway(p: Props) {
         <div className="flex items-center gap-3 relative z-10">
           <span className="w-11 h-11 bg-crimson flex items-center justify-center"><IcShield c="w-6 h-6" /></span>
           <div>
-            <p className="font-display font-bold tracking-[0.22em] text-[24px] leading-none">LEXVAULT</p>
+            <p className="font-display font-bold tracking-[0.22em] text-[24px] leading-none">KAGZAAT</p>
             <p className="font-mono text-[9.5px] uppercase tracking-[0.24em] text-paper/50 mt-1.5">{t("app.tag")}</p>
           </div>
         </div>
@@ -281,7 +281,7 @@ function Gateway(p: Props) {
         <div className="w-full max-w-md rise">
           <div className="lg:hidden flex items-center gap-2.5 mb-6 justify-center">
             <span className="w-9 h-9 bg-crimson flex items-center justify-center"><IcShield c="w-5 h-5" /></span>
-            <p className="font-display font-bold tracking-[0.2em] text-[20px]">LEXVAULT</p>
+            <p className="font-display font-bold tracking-[0.2em] text-[20px]">KAGZAAT</p>
           </div>
 
           {p.notice && (
@@ -481,7 +481,7 @@ function TotpSetup({ user, secret, recoveryCodes, onDone }: { user: User; secret
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
 
   useEffect(() => {
-    const uri = generateOTPAuthURI(secret, user.email, "LexVault");
+    const uri = generateOTPAuthURI(secret, user.email, "Kagzaat");
     QRCode.toDataURL(uri, { margin: 1, scale: 8 }).then(setQrDataUrl);
   }, [secret, user.email]);
 

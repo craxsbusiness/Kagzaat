@@ -321,7 +321,7 @@ function Portal() {
       pdf.setTextColor(255, 255, 255);
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(20);
-      pdf.text("LEXVAULT", margin, 36);
+      pdf.text("KAGZAAT", margin, 36);
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(9);
       pdf.text("CERTIFIED COPY — SECURE JUDICIAL DOCUMENT PORTAL", margin, 52);
@@ -394,7 +394,7 @@ function Portal() {
       y = pageHeight - 30;
       pdf.setFontSize(8);
       pdf.setTextColor(120, 120, 120);
-      pdf.text(`This is a certified copy issued by LexVault. Watermark: ${wm}`, margin, y);
+      pdf.text(`This is a certified copy issued by Kagzaat. Watermark: ${wm}`, margin, y);
       pdf.text(`Page ${pdf.getNumberOfPages()}`, pageWidth - margin - 40, y);
 
       pdf.save(`${d.id}_v${latestVersion?.v || 1}_${wm}.pdf`);
@@ -948,7 +948,7 @@ function Portal() {
             <div className="flex items-center gap-2.5">
               <span className="w-9 h-9 bg-crimson flex items-center justify-center text-paper"><IcShield c="w-5 h-5" /></span>
               <div>
-                <p className="font-display font-bold tracking-[0.18em] text-[17px] leading-none">LEXVAULT</p>
+                <p className="font-display font-bold tracking-[0.18em] text-[17px] leading-none">KAGZAAT</p>
                 <p className="font-mono text-[8.5px] uppercase tracking-[0.18em] text-paper/50 mt-1">{t("app.tag")}</p>
               </div>
               <button className="ml-auto lg:hidden text-paper/60 hover:text-paper" onClick={() => setSideOpen(false)} aria-label="Close menu"><IcX c="w-4 h-4" /></button>

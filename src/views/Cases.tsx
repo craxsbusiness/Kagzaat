@@ -653,7 +653,7 @@ function DeaccessionModal({ p, d, onClose }: { p: CasesProps; d: LegalDoc; onClo
           <label className={labelCls}>Reason (required, ledgered)</label>
           <input className={inputCls} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Witness protection direction u/s …" />
         </div>
-        <p className="font-mono text-[10px] uppercase tracking-widest text-ink3">Deletion of legal records is not possible in LexVault.</p>
+        <p className="font-mono text-[10px] uppercase tracking-widest text-ink3">Deletion of legal records is not possible in Kagzaat.</p>
         <div className="flex justify-end gap-2">
           <Btn kind="ghost" onClick={onClose}>Cancel</Btn>
           <Btn type="submit" kind="danger" disabled={reason.trim().length < 6}><IcArchive c="w-3.5 h-3.5" /> Deaccession</Btn>

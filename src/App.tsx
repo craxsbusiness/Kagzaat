@@ -8,7 +8,7 @@ import {
 } from "./data";
 import { hashPassword, hashSecret } from "./lib";
 import { discardSupabaseSession, isSupabaseConfigured, sendPersonCodeEmail } from "./supabase";
-import { fetchRegistryRows, openRegistryChannel, syncAvailable, upsertRegistryRow, type RegistryRow, type SyncKey } from "./supaSync";
+import { syncAvailable, fetchRegistryRows, openRegistryChannel, upsertRegistryRow, useSupabaseData, type RegistryRow, type SyncKey } from "./supaSync";
 import { Btn, Chip, ToastProvider, useFeed, useToast } from "./ui";
 import { PrefsProvider, usePrefs, useT } from "./i18n";
 import {
@@ -44,17 +44,17 @@ function Portal() {
   const prefs = usePrefs();
   const t = prefs.t;
 
-  /* ---------------- persistent state with Supabase sync ---------------- */
+  /* ---------------- persistent state - Supabase only ---------------- */
   const [session, setSession] = useLocalState<Session | null>("lv4:session", null);
-  const [users, setUsers] = useLocalState<User[]>("lv4:users", []);
-  const [courts, setCourts] = useLocalState<Court[]>("lv4:courts", []);
-  const [cases, setCases] = useLocalState<CaseFile[]>("lv4:cases", []);
-  const [docs, setDocs] = useLocalState<LegalDoc[]>("lv4:docs", []);
-  const [evidence, setEvidence] = useLocalState<EvidenceItem[]>("lv4:evidence", []);
-  const [audit, setAudit] = useLocalState<ChainLink[]>("lv4:audit", []);
-  const [logins, setLogins] = useLocalState<LoginEvent[]>("lv4:logins", []);
-  const [security, setSecurity] = useLocalState<SecurityEvent[]>("lv4:security", []);
-  const [notices, setNotices] = useLocalState<Notice[]>("lv4:notices", []);
+  const [users, setUsers, usersLoaded] = useSupabaseData<User>("users");
+  const [courts, setCourts, courtsLoaded] = useSupabaseData<Court>("courts");
+  const [cases, setCases, casesLoaded] = useSupabaseData<CaseFile>("cases");
+  const [docs, setDocs, docsLoaded] = useSupabaseData<LegalDoc>("docs");
+  const [evidence, setEvidence, evidenceLoaded] = useSupabaseData<EvidenceItem>("evidence");
+  const [audit, setAudit, auditLoaded] = useSupabaseData<ChainLink>("audit");
+  const [logins, setLogins, loginsLoaded] = useSupabaseData<LoginEvent>("logins");
+  const [security, setSecurity, securityLoaded] = useSupabaseData<SecurityEvent>("security");
+  const [notices, setNotices, noticesLoaded] = useSupabaseData<Notice>("notices");
 
   /* ---------------- Sync state ---------------- */
   const syncOn = syncAvailable();
@@ -102,6 +102,7 @@ function Portal() {
   }, [feed.lastId]);
   const [sideOpen, setSideOpen] = useState(false);
   const [expiredNotice, setExpiredNotice] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<{ show: boolean; progress: number; filename: string }>({ show: false, progress: 0, filename: "" });
 
   const user = useMemo(() => (session ? users.find((u) => u.id === session.userId) ?? null : null), [session, users]);
   const now = useNow(1000);
@@ -209,22 +210,41 @@ function Portal() {
     if (!user) return;
     const c = cases.find((x) => x.id === caseId);
     if (!c || !canUpload(user, c)) return;
-    const seq = docs.filter((d) => d.caseId === caseId).length + 1;
-    const id = `DOC-${caseId.split("-").pop()}-${String(seq).padStart(2, "0")}`;
-    const nowIso = new Date().toISOString();
-    const hash = versionHash(id, 1, pp.body, pp.note, "0".repeat(64));
-    const doc: LegalDoc = {
-      id, caseId, type: pp.type, title: pp.title, classification: pp.classification,
-      status: pp.submitForReview ? "REVIEW" : "DRAFT",
-      uploadedBy: user.name, createdAt: nowIso,
-      sizeKB: Math.max(8, Math.round(pp.body.length / 9)),
-      versions: [{ v: 1, ts: nowIso, author: user.name, note: pp.note, body: pp.body, status: pp.submitForReview ? "REVIEW" : "DRAFT", hash, prevHash: "0".repeat(64) }],
-      accessCount: 0,
-    };
-    setDocs((prev) => [doc, ...prev]);
-    log("DOC_UPLOADED", { caseId, docId: id, detail: `${pp.type} · v1 · SHA-256 anchored · class ${pp.classification}` });
-    if (pp.submitForReview) c.lawyerIds.concat(c.judgeId).slice(0, 2).forEach((uidX) => notify(uidX, "DOC", `${id} submitted for approval — ${pp.title}`, caseId));
-    toast("success", "Document uploaded", `${id} · Version 1 anchored with its SHA-256 digest.`);
+    
+    // Show upload progress
+    setUploadProgress({ show: true, progress: 0, filename: pp.title });
+    
+    // Simulate upload progress over 5 seconds
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 20; // 5 seconds = 100% / 20% per second
+      setUploadProgress(prev => ({ ...prev, progress }));
+      
+      if (progress >= 100) {
+        clearInterval(interval);
+        
+        // Complete the upload
+        const seq = docs.filter((d) => d.caseId === caseId).length + 1;
+        const id = `DOC-${caseId.split("-").pop()}-${String(seq).padStart(2, "0")}`;
+        const nowIso = new Date().toISOString();
+        const hash = versionHash(id, 1, pp.body, pp.note, "0".repeat(64));
+        const doc: LegalDoc = {
+          id, caseId, type: pp.type, title: pp.title, classification: pp.classification,
+          status: pp.submitForReview ? "REVIEW" : "DRAFT",
+          uploadedBy: user.name, createdAt: nowIso,
+          sizeKB: Math.max(8, Math.round(pp.body.length / 9)),
+          versions: [{ v: 1, ts: nowIso, author: user.name, note: pp.note, body: pp.body, status: pp.submitForReview ? "REVIEW" : "DRAFT", hash, prevHash: "0".repeat(64) }],
+          accessCount: 0,
+        };
+        setDocs((prev) => [doc, ...prev]);
+        log("DOC_UPLOADED", { caseId, docId: id, detail: `${pp.type} · v1 · SHA-256 anchored · class ${pp.classification}` });
+        if (pp.submitForReview) c.lawyerIds.concat(c.judgeId).slice(0, 2).forEach((uidX) => notify(uidX, "DOC", `${id} submitted for approval — ${pp.title}`, caseId));
+        toast("success", "Document uploaded", `${id} · Version 1 anchored with its SHA-256 digest.`);
+        
+        // Hide progress after a brief delay
+        setTimeout(() => setUploadProgress({ show: false, progress: 0, filename: "" }), 500);
+      }
+    }, 1000); // Update every second
   };
 
   const editDoc = (docId: string, note: string, body: string) => {

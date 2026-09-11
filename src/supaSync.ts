@@ -1,18 +1,14 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase, isSupabaseConfigured } from "./supabase";
 
 /* ================================================================== */
-/* Real-time registry sync                                             */
+/* Supabase-first data hook — no localStorage                          */
 /*                                                                     */
-/* Four collections travel through the `registry` table (one row per   */
-/* collection): users · cases · docs · evidence. Local edits are       */
-/* debounced-upserted; the realtime channel pushes remote rows back    */
-/* into every open device. JSON equality guards prevent echo loops.    */
-/*                                                                     */
-/* Prerequisite: run supabase/schema.sql once in the SQL editor.       */
+/* Data lives ONLY in Supabase. On mount we fetch, on change we push.  */
+/* Realtime channel keeps all devices in sync.                         */
 /* ================================================================== */
 
 export type SyncKey = "users" | "courts" | "cases" | "docs" | "evidence" | "audit" | "logins" | "security" | "notices";
-export const SYNC_KEYS: SyncKey[] = ["users", "courts", "cases", "docs", "evidence", "audit", "logins", "security", "notices"];
 
 export interface RegistryRow {
   id: SyncKey;
@@ -22,59 +18,157 @@ export interface RegistryRow {
 
 export const syncAvailable = (): boolean => isSupabaseConfigured();
 
-export async function fetchRegistryRows(): Promise<RegistryRow[]> {
+/** Fetch all data from Supabase */
+export async function fetchAllData(): Promise<Record<SyncKey, unknown[]>> {
   if (!supabase) {
-    console.error('[SupaSync] Supabase client is null');
-    return [];
+    console.error("[SupaSync] Supabase client is null");
+    return { users: [], courts: [], cases: [], docs: [], evidence: [], audit: [], logins: [], security: [], notices: [] };
   }
-  console.log('[SupaSync] Fetching registry rows from Supabase...');
-  const { data, error } = await supabase.from("registry").select("id,payload,updated_at");
+
+  const { data, error } = await supabase.from("registry").select("id,payload");
+  if (error || !data) {
+    console.error("[SupaSync] Fetch error:", error);
+    return { users: [], courts: [], cases: [], docs: [], evidence: [], audit: [], logins: [], security: [], notices: [] };
+  }
+
+  const result: Record<string, unknown[]> = {
+    users: [], courts: [], cases: [], docs: [], evidence: [], audit: [], logins: [], security: [], notices: [],
+  };
+
+  for (const row of data) {
+    if (row.id && Array.isArray(row.payload)) {
+      result[row.id] = row.payload;
+    }
+  }
+
+  return result as Record<SyncKey, unknown[]>;
+}
+
+/** Push data to Supabase */
+export async function pushToSupabase(key: SyncKey, data: unknown[]): Promise<void> {
+  if (!supabase) return;
+
+  const { error } = await supabase.from("registry").upsert({
+    id: key,
+    payload: data,
+    updated_at: new Date().toISOString(),
+  });
+
   if (error) {
-    console.error('[SupaSync] Error fetching registry:', error);
-    return [];
+    console.error(`[SupaSync] Push error for ${key}:`, error);
   }
-  if (!data) {
-    console.log('[SupaSync] No data returned from registry table');
-    return [];
-  }
-  console.log('[SupaSync] Successfully fetched', data.length, 'rows');
+}
+
+/** Fetch registry rows (legacy API) */
+export async function fetchRegistryRows(): Promise<RegistryRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("registry").select("id,payload,updated_at");
+  if (error || !data) return [];
   return data as unknown as RegistryRow[];
 }
 
+/** Upsert a registry row (legacy API) */
 export function upsertRegistryRow(key: SyncKey, payload: unknown): void {
-  if (!supabase) {
-    console.error('[SupaSync] Cannot upsert - Supabase client is null');
-    return;
-  }
-  console.log('[SupaSync] Upserting', key, 'to Supabase with', Array.isArray(payload) ? payload.length : 'non-array', 'items');
+  if (!supabase) return;
   supabase.from("registry").upsert({ id: key, payload, updated_at: new Date().toISOString() })
     .then(({ error }) => {
-      if (error) {
-        console.error('[SupaSync] Error upserting', key, ':', error);
-      } else {
-        console.log('[SupaSync] Successfully upserted', key);
-      }
+      if (error) console.error(`[SupaSync] Upsert error for ${key}:`, error);
     });
 }
 
-export type RowHandler = (row: RegistryRow) => void;
-
-/** Opens the realtime channel; returns an unsubscribe function. */
-export function openRegistryChannel(onRow: RowHandler): () => void {
-  const client = supabase;
-  if (!client) return () => {};
-  const channel = client
+/** Open realtime channel (legacy API) */
+export function openRegistryChannel(onRow: (row: RegistryRow) => void): () => void {
+  if (!supabase) return () => {};
+  const channel = supabase
     .channel("lexvault-registry")
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "registry" },
-      (payload) => {
-        const next = payload.new as unknown as RegistryRow | null;
-        if (next && next.id) onRow(next);
-      }
-    )
+    .on("postgres_changes", { event: "*", schema: "public", table: "registry" }, (payload) => {
+      const next = payload.new as RegistryRow | null;
+      if (next && next.id) onRow(next);
+    })
     .subscribe();
   return () => {
-    void client.removeChannel(channel);
+    if (supabase) supabase.removeChannel(channel);
   };
+}
+
+/** Hook that manages a single data collection in Supabase */
+export function useSupabaseData<T>(
+  key: SyncKey, 
+  initial: T[] = []
+): [T[], (data: T[] | ((prev: T[]) => T[])) => void, boolean] {
+  const [data, setData] = useState<T[]>(initial);
+  const [loaded, setLoaded] = useState(false);
+  const lastPushed = useRef<string>("");
+  const pushTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  // Fetch on mount
+  useEffect(() => {
+    if (!syncAvailable()) {
+      setLoaded(true);
+      return;
+    }
+
+    const load = async () => {
+      const all = await fetchAllData();
+      if (all[key] && all[key].length > 0) {
+        setData(all[key] as T[]);
+        lastPushed.current = JSON.stringify(all[key]);
+      }
+      setLoaded(true);
+    };
+
+    load();
+  }, [key]);
+
+  // Subscribe to realtime changes
+  useEffect(() => {
+    if (!syncAvailable() || !supabase) return;
+
+    const channel = supabase
+      .channel(`registry-${key}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "registry", filter: `id=eq.${key}` },
+        (payload) => {
+          const newRow = payload.new as RegistryRow | null;
+          if (newRow && Array.isArray(newRow.payload)) {
+            const json = JSON.stringify(newRow.payload);
+            if (json !== lastPushed.current) {
+              setData(newRow.payload as T[]);
+              lastPushed.current = json;
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      if (supabase) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [key]);
+
+  // Update function — supports both direct values and updater functions
+  const updateData = useCallback((newDataOrUpdater: T[] | ((prev: T[]) => T[])) => {
+    const newData = typeof newDataOrUpdater === "function" 
+      ? (newDataOrUpdater as (prev: T[]) => T[])(data)
+      : newDataOrUpdater;
+    
+    setData(newData);
+
+    if (!syncAvailable()) return;
+
+    const json = JSON.stringify(newData);
+    if (json === lastPushed.current) return;
+
+    // Debounce rapid changes
+    if (pushTimer.current) clearTimeout(pushTimer.current);
+    pushTimer.current = setTimeout(() => {
+      lastPushed.current = json;
+      pushToSupabase(key, newData);
+    }, 300);
+  }, [key, data]);
+
+  return [data, updateData, loaded];
 }

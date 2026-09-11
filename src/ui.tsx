@@ -163,17 +163,19 @@ export function Chip({ children, tone = "neutral" }: { children: ReactNode; tone
 /* ------------------------------------------------------------------ */
 export function Panel({ title, right, children, className = "", delay = 0 }: { title?: ReactNode; right?: ReactNode; children: ReactNode; className?: string; delay?: number }) {
   return (
-    <section className={`rise relative bg-card/90 border border-line rounded-[14px] overflow-hidden shadow-[inset_0_1px_0_color-mix(in_srgb,var(--brass)_28%,transparent),0_1px_2px_rgba(0,0,0,0.05),0_12px_28px_-20px_var(--shadowc)] ${className}`} style={{ animationDelay: `${delay}ms` }}>
+    <section className={`rise relative bg-card border border-line rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 ${className}`} style={{ animationDelay: `${delay}ms` }}>
       {title !== undefined && (
-        <header className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-line bg-paper2/60">
-          <h3 className="font-display font-semibold uppercase tracking-[0.14em] text-[13px] text-navy dark:text-ink flex items-center gap-2">
-            <span className="w-1 h-3.5 bg-crimson inline-block" />
+        <header className="flex items-center justify-between gap-3 px-6 py-4 border-b border-line bg-gradient-to-r from-paper2/80 to-paper2/40">
+          <h3 className="font-display font-semibold text-[15px] text-navy dark:text-ink flex items-center gap-2.5">
+            <span className="w-1.5 h-4 bg-gradient-to-b from-crimson to-crimson2 rounded-full inline-block" />
             {title}
           </h3>
           {right}
         </header>
       )}
-      {children}
+      <div className="p-6">
+        {children}
+      </div>
     </section>
   );
 }
@@ -191,11 +193,11 @@ export function StatTile({ label, value, sub, tone = "navy", delay = 0 }: { labe
   const bar =
     tone === "red" ? "bg-crimson" : tone === "amber" ? "bg-amber" : tone === "green" ? "bg-green2" : tone === "azure" ? "bg-azure" : tone === "plum" ? "bg-plum" : "bg-navy";
   return (
-    <div className="rise relative bg-card/90 border border-line rounded-[14px] px-4 pt-3.5 pb-3 overflow-hidden group hover:border-ink3 hover:-translate-y-0.5 transition-all duration-200" style={{ animationDelay: `${delay}ms` }}>
-      <span className={`absolute left-0 top-0 bottom-0 w-[3px] ${bar} group-hover:w-[5px] transition-all duration-300`} />
-      <p className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink3">{label}</p>
-      <p className="font-display font-semibold text-[34px] leading-none text-ink mt-1.5 tabular-nums">{value}</p>
-      {sub && <p className="text-[11.5px] text-ink2 mt-1.5">{sub}</p>}
+    <div className="rise relative bg-card border border-line rounded-2xl px-6 pt-5 pb-4 overflow-hidden group hover:shadow-lg hover:-translate-y-1 transition-all duration-300" style={{ animationDelay: `${delay}ms` }}>
+      <span className={`absolute left-0 top-0 bottom-0 w-1 ${bar} rounded-r-full group-hover:w-1.5 transition-all duration-300`} />
+      <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink3 mb-2">{label}</p>
+      <p className="font-display font-semibold text-[38px] leading-none text-ink tabular-nums">{value}</p>
+      {sub && <p className="text-[12px] text-ink2 mt-2">{sub}</p>}
     </div>
   );
 }
@@ -210,9 +212,9 @@ export function Modal({ onClose, children, wide = false }: { onClose: () => void
     return () => window.removeEventListener("keydown", fn);
   }, [onClose]);
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-navy/60 fade-in" onClick={onClose} />
-      <div role="dialog" aria-modal="true" className={`modal-in relative bg-paper border border-line rounded-2xl shadow-2xl shadow-navy/40 w-full ${wide ? "max-w-2xl" : "max-w-lg"} max-h-[88vh] overflow-y-auto`}>
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-6">
+      <div className="absolute inset-0 bg-navy/60 backdrop-blur-sm fade-in" onClick={onClose} />
+      <div role="dialog" aria-modal="true" className={`modal-in relative bg-paper border border-line rounded-3xl shadow-2xl shadow-navy/40 w-full ${wide ? "max-w-3xl" : "max-w-xl"} max-h-[90vh] overflow-y-auto`}>
         {children}
       </div>
     </div>
@@ -238,13 +240,13 @@ export function ModalHead({ title, sub, onClose }: { title: string; sub?: string
 /* ------------------------------------------------------------------ */
 export function Btn({ children, onClick, kind = "primary", disabled = false, className = "", title, type = "button" }: { children: ReactNode; onClick?: () => void; kind?: "primary" | "ghost" | "danger" | "navy" | "subtle" | "green"; disabled?: boolean; className?: string; title?: string; type?: "button" | "submit" }) {
   const base =
-    "inline-flex items-center justify-center gap-1.5 font-display font-medium uppercase tracking-[0.1em] text-[12.5px] px-3.5 py-2 rounded-lg border transition-all duration-150 hover:shadow-[0_4px_14px_-6px_var(--shadowc)] active:translate-y-px disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap";
+    "inline-flex items-center justify-center gap-2 font-display font-semibold text-[13px] px-5 py-2.5 rounded-xl border-2 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap";
   const kinds = {
-    primary: "bg-crimson text-paper border-crimson hover:bg-crimson2 hover:border-crimson2",
-    navy: "bg-navy text-paper border-navy hover:bg-navy2 hover:border-navy2",
-    green: "bg-green text-paper border-green hover:opacity-90",
-    danger: "bg-card text-crimson border-crimson/60 hover:bg-crimson/10",
-    ghost: "bg-card text-ink border-line hover:border-navy hover:bg-paper2",
+    primary: "bg-crimson text-paper border-crimson hover:bg-crimson2 hover:border-crimson2 hover:shadow-crimson/20",
+    navy: "bg-navy text-paper border-navy hover:bg-navy2 hover:border-navy2 hover:shadow-navy/20",
+    green: "bg-green text-paper border-green hover:opacity-90 hover:shadow-green/20",
+    danger: "bg-card text-crimson border-crimson hover:bg-crimson/10 hover:border-crimson",
+    ghost: "bg-card text-ink border-line hover:border-navy hover:bg-paper2 hover:shadow-sm",
     subtle: "bg-transparent text-ink2 border-transparent hover:text-ink hover:border-line",
   };
   return (

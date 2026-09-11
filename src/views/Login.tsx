@@ -229,7 +229,7 @@ function Gateway(p: Props) {
       <div className="hidden flex-col w-[46%] px-12 py-10 border-r border-navyline relative overflow-hidden">
         <div className="scanline absolute inset-0 pointer-events-none" />
         <div className="flex items-center gap-3 relative z-10">
-          <span className="w-11 h-11 bg-crimson flex items-center justify-center"><IcShield c="w-6 h-6" /></span>
+          <img src="/logo.svg" alt="Kagzaat Logo" className="w-12 h-12" />
           <div>
             <p className="font-display font-bold tracking-[0.22em] text-[24px] leading-none">KAGZAAT</p>
             <p className="font-mono text-[9.5px] uppercase tracking-[0.24em] text-paper/50 mt-1.5">{t("app.tag")}</p>
@@ -280,7 +280,7 @@ function Gateway(p: Props) {
       <div className="flex-1 flex items-center justify-center p-6 relative">
         <div className="w-full max-w-md rise">
           <div className="lg:hidden flex items-center gap-2.5 mb-6 justify-center">
-            <span className="w-9 h-9 bg-crimson flex items-center justify-center"><IcShield c="w-5 h-5" /></span>
+            <img src="/logo.svg" alt="Kagzaat Logo" className="w-10 h-10" />
             <p className="font-display font-bold tracking-[0.2em] text-[20px]">KAGZAAT</p>
           </div>
 

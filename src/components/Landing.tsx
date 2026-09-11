@@ -113,10 +113,8 @@ export default function Landing({ stats, onEnter }: Props) {
 
       {/* top bar */}
       <header className="relative z-20 flex items-center justify-between gap-3 px-5 lg:px-10 py-4">
-        <div className="flex items-center gap-2.5">
-          <span className="w-10 h-10 rounded-full bg-crimson text-paper flex items-center justify-center shadow-lg shadow-crimson/30">
-            <IcScale c="w-5 h-5" />
-          </span>
+        <div className="flex items-center gap-3">
+          <img src="/logo.svg" alt="Kagzaat Logo" className="w-12 h-12" />
           <div>
             <p className="font-display font-bold tracking-[0.2em] text-[19px] leading-none text-ink">KAGZAAT</p>
             <p className="font-mono text-[8.5px] uppercase tracking-[0.2em] text-ink3 mt-1">{t("app.tag")}</p>

@@ -70,7 +70,7 @@ export default function Dashboard(p: DashProps) {
         <div className="rise relative overflow-hidden rounded-xl border border-navy/25 bg-navy text-paper px-6 py-6">
           <div className="scanline absolute inset-0 pointer-events-none opacity-60" />
           <div className="relative flex flex-wrap items-center gap-5">
-            <span className="w-12 h-12 bg-crimson flex items-center justify-center shrink-0"><IcShield c="w-6 h-6" /></span>
+            <img src="/logo.svg" alt="Kagzaat Logo" className="w-12 h-12 shrink-0" />
             <div className="min-w-0 flex-1">
               <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-[#e0b968]">{t("dash.emptyKicker")}</p>
               <h2 className="font-display font-semibold uppercase tracking-wide text-[21px] leading-tight mt-1">

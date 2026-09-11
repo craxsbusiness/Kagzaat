@@ -1,33 +1,49 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background circle for better visibility -->
+  <circle cx="256" cy="256" r="250" fill="#f8fafc" stroke="#1a3a5c" stroke-width="4"/>
+  
+  <!-- Police Cap -->
+  <g transform="translate(256, 140)">
+    <!-- Cap base -->
+    <ellipse cx="0" cy="0" rx="90" ry="30" fill="#1a3a5c"/>
+    <path d="M -90 0 Q -95 -45 -80 -70 L 80 -70 Q 95 -45 90 0" fill="#1a3a5c"/>
+    <!-- Cap visor -->
+    <ellipse cx="0" cy="8" rx="95" ry="25" fill="#0f2840"/>
+    <!-- Gold band -->
+    <rect x="-85" y="-18" width="170" height="15" fill="#d4af37" rx="3"/>
+    <!-- Gold badge with star -->
+    <g transform="translate(0, -42)">
+      <circle cx="0" cy="0" r="22" fill="#d4af37"/>
+      <path d="M 0 -15 L 3 -5 L 12 -5 L 5 1 L 7.5 11 L 0 5 L -7.5 11 L -5 1 L -12 -5 L -3 -5 Z" fill="#1a3a5c"/>
+    </g>
+  </g>
   
   <!-- Open Book -->
-  <g transform="translate(256, 200)">
-    <path d="M 0 -60 L -100 -45 L -100 50 L 0 40 Z" fill="#e8f0f8"/>
-    <path d="M 0 -60 L 100 -45 L 100 50 L 0 40 Z" fill="#f5f9fc"/>
-    <rect x="-3" y="-60" width="6" height="100" fill="#1a3a5c" rx="2"/>
-    
-    <!-- Page lines -->
-    <line x1="-85" y1="-30" x2="-15" y2="-38" stroke="#c0d0e0" stroke-width="2"/>
-    <line x1="-85" y1="-15" x2="-15" y2="-23" stroke="#c0d0e0" stroke-width="2"/>
-    <line x1="-85" y1="0" x2="-15" y2="-8" stroke="#c0d0e0" stroke-width="2"/>
-    <line x1="-85" y1="15" x2="-15" y2="7" stroke="#c0d0e0" stroke-width="2"/>
-    
-    <line x1="85" y1="-30" x2="15" y2="-38" stroke="#c0d0e0" stroke-width="2"/>
-    <line x1="85" y1="-15" x2="15" y2="-23" stroke="#c0d0e0" stroke-width="2"/>
-    <line x1="85" y1="0" x2="15" y2="-8" stroke="#c0d0e0" stroke-width="2"/>
-    <line x1="85" y1="15" x2="15" y2="7" stroke="#c0d0e0" stroke-width="2"/>
+  <g transform="translate(256, 280)">
+    <!-- Book spine -->
+    <rect x="-4" y="-50" width="8" height="100" fill="#4a6a8a" rx="3"/>
+    <!-- Left page -->
+    <path d="M -4 -50 L -100 -38 L -100 50 L -4 42 Z" fill="#f5f5f5" stroke="#c0c8d0" stroke-width="2"/>
+    <!-- Right page -->
+    <path d="M 4 -50 L 100 -38 L 100 50 L 4 42 Z" fill="#ffffff" stroke="#c0c8d0" stroke-width="2"/>
+    <!-- Page lines (left) -->
+    <line x1="-85" y1="-25" x2="-15" y2="-32" stroke="#c0c8d0" stroke-width="2"/>
+    <line x1="-85" y1="-12" x2="-15" y2="-19" stroke="#c0c8d0" stroke-width="2"/>
+    <line x1="-85" y1="1" x2="-15" y2="-6" stroke="#c0c8d0" stroke-width="2"/>
+    <line x1="-85" y1="14" x2="-15" y2="7" stroke="#c0c8d0" stroke-width="2"/>
+    <line x1="-85" y1="27" x2="-15" y2="20" stroke="#c0c8d0" stroke-width="2"/>
+    <!-- Page lines (right) -->
+    <line x1="85" y1="-25" x2="15" y2="-32" stroke="#c0c8d0" stroke-width="2"/>
+    <line x1="85" y1="-12" x2="15" y2="-19" stroke="#c0c8d0" stroke-width="2"/>
+    <line x1="85" y1="1" x2="15" y2="-6" stroke="#c0c8d0" stroke-width="2"/>
+    <line x1="85" y1="14" x2="15" y2="7" stroke="#c0c8d0" stroke-width="2"/>
+    <line x1="85" y1="27" x2="15" y2="20" stroke="#c0c8d0" stroke-width="2"/>
   </g>
   
-  <!-- Lock Icon -->
-  <g transform="translate(256, 180)">
-    <rect x="-20" y="-5" width="40" height="30" fill="#d4af37" rx="4"/>
-    <path d="M -12 -5 L -12 -15 Q -12 -25 0 -25 Q 12 -25 12 -15 L 12 -5" stroke="#d4af37" stroke-width="4" fill="none"/>
-    <circle cx="0" cy="10" r="3" fill="#1a3a5c"/>
-    <rect x="-1" y="10" width="2" height="8" fill="#1a3a5c"/>
+  <!-- Lock Icon on book -->
+  <g transform="translate(310, 260)">
+    <rect x="-12" y="-3" width="24" height="18" fill="#d4af37" rx="3"/>
+    <path d="M -8 -3 L -8 -9 Q -8 -15 0 -15 Q 8 -15 8 -9 L 8 -3" stroke="#d4af37" stroke-width="3" fill="none"/>
+    <circle cx="0" cy="6" r="2.5" fill="#1a3a5c"/>
   </g>
-  
-  <!-- Text -->
-  <text x="256" y="320" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="#1a3a5c" text-anchor="middle">Kagzaat</text>
-  <text x="256" y="360" font-family="Arial, sans-serif" font-size="18" fill="#4a6a8a" text-anchor="middle" letter-spacing="3">SAFE DOCUMENTS • STRONG JUSTICE</text>
 </svg>

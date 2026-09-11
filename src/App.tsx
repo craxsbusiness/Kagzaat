@@ -946,7 +946,7 @@ function Portal() {
         <aside className={`ambient-navy fixed lg:sticky top-[24px] lg:top-0 z-40 h-[calc(100vh-24px)] lg:h-screen w-[240px] shrink-0 border-r border-navyline text-paper flex flex-col transition-transform duration-300 ${sideOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
           <div className="px-5 pt-5 pb-4 border-b border-navyline">
             <div className="flex items-center gap-2.5">
-              <span className="w-9 h-9 bg-crimson flex items-center justify-center text-paper"><IcShield c="w-5 h-5" /></span>
+              <img src="/logo.svg" alt="Kagzaat Logo" className="w-10 h-10" />
               <div>
                 <p className="font-display font-bold tracking-[0.18em] text-[17px] leading-none">KAGZAAT</p>
                 <p className="font-mono text-[8.5px] uppercase tracking-[0.18em] text-paper/50 mt-1">{t("app.tag")}</p>

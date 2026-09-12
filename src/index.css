@@ -165,19 +165,19 @@ body {
   transition: background 0.35s ease, color 0.35s ease;
 }
 
-/* Softer, more rounded design */
-button, .btn {
-  border-radius: 12px !important;
+/* Softer, more rounded design - only for text buttons, not icon buttons */
+.btn {
+  border-radius: 12px;
   font-weight: 600;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-button:hover {
+.btn:hover {
   transform: translateY(-1px);
 }
 
-.card, .panel, [class*="bg-card"] {
-  border-radius: 16px !important;
+.card, .panel {
+  border-radius: 16px;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -188,13 +188,13 @@ button:hover {
 }
 
 input, select, textarea {
-  border-radius: 10px !important;
-  padding: 12px 16px !important;
+  border-radius: 10px;
   transition: all 0.2s ease;
 }
 
 input:focus, select:focus, textarea:focus {
-  transform: translateY(-1px);
+  border-color: var(--azure);
+  box-shadow: 0 0 0 3px rgba(47, 106, 148, 0.1);
 }
 
 /* More spacing */
@@ -223,30 +223,6 @@ h1, h2, h3, h4 {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-button, .btn {
-  border-radius: 12px !important;
-  padding: 10px 20px !important;
-  font-weight: 600 !important;
-}
-
-.card, .panel, [class*="bg-card"] {
-  border-radius: 16px !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06) !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.card:hover, .panel:hover {
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1) !important;
-  transform: translateY(-2px) !important;
-}
-
-input, select, textarea {
-  border-radius: 10px !important;
-  padding: 12px 16px !important;
-  border: 2px solid var(--line) !important;
-  transition: all 0.2s ease !important;
-}
-
 input:focus, select:focus, textarea:focus {
   border-color: var(--azure) !important;
   box-shadow: 0 0 0 3px rgba(47, 106, 148, 0.1) !important;
@@ -259,8 +235,18 @@ input:focus, select:focus, textarea:focus {
    rounded-* utility (pills, custom radii) still wins where it is applied. */
 input:not([type="checkbox"]):not([type="radio"]),
 select,
-textarea,
+textarea {
+  border-radius: 9px;
+}
+
+/* Button base styles - only apply to text buttons, not icon buttons */
 button {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Text buttons get rounded corners */
+button:not([class*="w-"]):not([class*="h-"]):not([class*="p-"]):not([class*="rounded"]) {
   border-radius: 9px;
 }
 

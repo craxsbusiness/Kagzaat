@@ -703,7 +703,7 @@ function Portal() {
     } else {
       console.log("Not first user - logging USER_CREATED");
       log("USER_CREATED", { detail: `${sp.name} self-registered as ${ROLE_LABEL[role]} (${nu.id}) · phone ${sp.phone} · person code ${personCode} issued`, actor: sp.name, role: ROLE_LABEL[role] });
-      notify(nu.id, "SYSTEM", `Welcome ${sp.name}. Your person code is ${personCode}. Case files appear once the registry links you as a party.`);
+      notify(nu.id, "SYSTEM", `Welcome ${sp.name}. Your account has been created. Case files appear once the registry links you as a party.`);
     }
     console.log("=== SIGNUP COMPLETE, returning personCode:", personCode, "===");
     return personCode;
@@ -748,7 +748,7 @@ function Portal() {
     setUsers((prev) => [...prev, nu]);
     dispatchPersonCode(nu);
     log("USER_CREATED", { detail: `${pp.name} registered as ${ROLE_LABEL[pp.role]} (${nu.id}) by police ${user.name} · person code ${personCode} issued`, actor: user.name, role: ROLE_LABEL.POLICE });
-    notify(nu.id, "SYSTEM", `Welcome ${pp.name}. Your account has been created by the police. Your person code is ${personCode}.`);
+    notify(nu.id, "SYSTEM", `Welcome ${pp.name}. Your account has been created by the police.`);
     return personCode;
   };
 

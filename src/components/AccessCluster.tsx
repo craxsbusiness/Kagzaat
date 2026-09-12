@@ -22,7 +22,6 @@ export default function AccessCluster({ compact = false }: { compact?: boolean }
             value={prefs.lang}
             onChange={(e) => {
               prefs.setLang(e.target.value as typeof prefs.lang);
-              toast("info", t("a11y.toastLang"));
             }}
             className="appearance-none bg-transparent font-display font-semibold text-[13px] text-ink pl-1 pr-6 py-1.5 cursor-pointer focus:outline-none"
             aria-label={t("a11y.lang")}

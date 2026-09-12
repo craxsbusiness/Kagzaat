@@ -402,6 +402,7 @@ function UserModal({ p, onClose }: { p: Props; onClose: () => void }) {
   const [courtIds, setCourtIds] = useState<string[]>([]);
   const [stationId, setStationId] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [qIdx, setQIdx] = useState(0);
   const [qCustom, setQCustom] = useState(false);
   const [qText, setQText] = useState("");
@@ -409,8 +410,9 @@ function UserModal({ p, onClose }: { p: Props; onClose: () => void }) {
   const needsCourts = role === "JUDGE" || role === "ADMIN" || role === "AUDITOR";
   const okPhone = phone.trim() === "" || /^[+]?[\d\s\-()]{8,17}$/.test(phone.trim());
   const okQ = !qCustom || qText.trim().length >= 6;
+  const passwordsMatch = password === confirmPassword;
   const valid =
-    name.trim().length >= 3 && email.includes("@") && password.length >= 8 && okPhone && okQ &&
+    name.trim().length >= 3 && email.includes("@") && password.length >= 8 && passwordsMatch && okPhone && okQ &&
     ans.trim().length >= 2 && (!needsCourts || courtIds.length > 0) && (role !== "POLICE" || stationId.trim().length > 1);
 
   return (
@@ -482,9 +484,18 @@ function UserModal({ p, onClose }: { p: Props; onClose: () => void }) {
             <input className={inputCls} value={stationId} onChange={(e) => setStationId(e.target.value)} placeholder="e.g. PS-MEH" />
           </div>
         )}
-        <div>
-          <label className={labelCls}>Initial password · min 8 chars (shared once, in person)</label>
-          <input className={inputCls} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>Initial password · min 8 chars</label>
+            <input className={inputCls} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+          </div>
+          <div>
+            <label className={labelCls}>Confirm password</label>
+            <input className={inputCls} type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="••••••••" />
+            {confirmPassword && !passwordsMatch && (
+              <p className="text-[11px] text-crimson mt-1">Passwords do not match</p>
+            )}
+          </div>
         </div>
         <div className="grid sm:grid-cols-2 gap-3">
           <div>

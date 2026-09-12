@@ -165,36 +165,33 @@ body {
   transition: background 0.35s ease, color 0.35s ease;
 }
 
-/* Softer, more rounded design - only for text buttons, not icon buttons */
+/* Button styles */
 .btn {
   border-radius: 12px;
   font-weight: 600;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn:hover {
   transform: translateY(-1px);
 }
 
+/* Ensure icon buttons have proper size */
+button:has(svg) {
+  min-width: 40px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Card and panel styles */
 .card, .panel {
   border-radius: 16px;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card:hover, .panel:hover {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
-}
-
-input, select, textarea {
-  border-radius: 10px;
-  transition: all 0.2s ease;
-}
-
-input:focus, select:focus, textarea:focus {
-  border-color: var(--azure);
-  box-shadow: 0 0 0 3px rgba(47, 106, 148, 0.1);
 }
 
 /* More spacing */
@@ -211,23 +208,6 @@ h1, h2, h3, h4 {
   letter-spacing: -0.02em;
 }
 
-/* Smoother transitions */
-* {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
-
-/* Make everything more rounded and spacious */
-* {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-input:focus, select:focus, textarea:focus {
-  border-color: var(--azure) !important;
-  box-shadow: 0 0 0 3px rgba(47, 106, 148, 0.1) !important;
-}
-
 .font-display { font-family: var(--font-display); }
 .font-mono { font-family: var(--font-mono); }
 
@@ -236,17 +216,6 @@ input:focus, select:focus, textarea:focus {
 input:not([type="checkbox"]):not([type="radio"]),
 select,
 textarea {
-  border-radius: 9px;
-}
-
-/* Button base styles - only apply to text buttons, not icon buttons */
-button {
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-/* Text buttons get rounded corners */
-button:not([class*="w-"]):not([class*="h-"]):not([class*="p-"]):not([class*="rounded"]) {
   border-radius: 9px;
 }
 
